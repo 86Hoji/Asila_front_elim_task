@@ -1,24 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/site/Navbar";
+import { Hero } from "@/components/landing/Hero";
+import { Problem } from "@/components/landing/Problem";
+import { Pipeline } from "@/components/landing/Pipeline";
+import { DataSection } from "@/components/landing/DataSection";
+import { Results } from "@/components/landing/Results";
+import { Report } from "@/components/landing/Report";
+import { Team } from "@/components/landing/Team";
+import { LinksFooter } from "@/components/landing/LinksFooter";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const title = "ASILA — Traffic events, detected. Accidents, anticipated.";
+const description =
+  "ASILA watches a fixed Tashkent CCTV camera: every traffic violation reported as a precise time segment, and an accident alarm raised seconds before impact. WIUT Hackathon 2026, Computer Vision track.";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="relative min-h-screen overflow-x-hidden bg-background">
+      <Navbar />
+      <main>
+        <Hero />
+        <Problem />
+        <Pipeline />
+        <DataSection />
+        <Results />
+        <Report />
+        <Team />
+        <LinksFooter />
+      </main>
     </div>
   );
 }
