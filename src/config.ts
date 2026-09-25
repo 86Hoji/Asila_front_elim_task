@@ -28,14 +28,15 @@ export const LINKS = {
 export const TEAM = [
   {
     name: "Khojiakbar Khakimov",
-    role: "Team captain · Frontend & product",
-    initials: "KH",
+    role: "Team captain · Frontend, product & analytics",
+    initials: "KK",
     did: [
-      "Product direction and judging narrative",
-      "Landing page and operator dashboard",
-      "Event timeline, risk chart and schematic renderer",
+      "Analysed the task and the judging criteria and set the product direction",
+      "Designed and built the website, the dashboard and the demo UI",
+      "Coordinated the team and the submission",
     ],
-    previous: "[TODO: previous projects]",
+    previous:
+      "Real Holat, a civic-tech platform for checking how public money is spent on infrastructure (3rd place and a 40M UZS investment grant, Real Holat Hackathon 2026); 2nd place, Uzum AdTech Hackathon 2026; 3rd place, National Transport Hackathon 2026 (Safe Layer, a road-quality map for micromobility).",
     links: {
       github: "https://github.com/86Hoji",
       linkedin: "https://www.linkedin.com/in/hojiakbar-xakimov-7920b6382",
@@ -43,20 +44,36 @@ export const TEAM = [
     },
   },
   {
-    name: "[TODO member 2]",
-    role: "[TODO role]",
-    initials: "T2",
-    did: ["[TODO: contribution]", "[TODO: contribution]"],
-    previous: "[TODO: previous projects]",
-    links: { github: "", linkedin: "", portfolio: "" },
+    name: "Zafar Ubaydullaev",
+    role: "Backend & infrastructure",
+    initials: "ZU",
+    did: [
+      "The offline inference package and repository",
+      "Video decoding and the runtime budget; deterministic runs",
+      "The demo API and deployment",
+    ],
+    previous: "Yoshlar Radar, a GovTech youth-employment platform (NEXUS30 hackathon).",
+    links: {
+      github: "https://github.com/ubaydullayevzafar1308-ops",
+      linkedin: "https://www.linkedin.com/in/zafar-ubaydullayev-741190360/",
+      portfolio: "",
+    },
   },
   {
-    name: "[TODO member 3]",
-    role: "[TODO role]",
-    initials: "T3",
-    did: ["[TODO: contribution]", "[TODO: contribution]"],
-    previous: "[TODO: previous projects]",
-    links: { github: "", linkedin: "", portfolio: "" },
+    name: "Khamid Bustanov",
+    role: "AI engineer · Models & testing",
+    initials: "KB",
+    did: [
+      "Model experiments",
+      "Testing and evaluation of the pipeline on our labelled sample videos",
+    ],
+    previous:
+      "Co-founder of Ziva (ziva.uz), an AI assistant for 736 Uzbek government services with 0 false answers across 1,985 test queries; a computer-vision clustering model for football analytics (Abstract IT).",
+    links: {
+      github: "https://github.com/tiredjon",
+      linkedin: "https://www.linkedin.com/in/khamidbustanov",
+      portfolio: "https://ziva.uz",
+    },
   },
 ];
 
