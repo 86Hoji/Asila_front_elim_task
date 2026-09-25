@@ -4,6 +4,7 @@ import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
 import { SceneMapFigure, VelocityFieldFigure } from "@/components/scene/SceneFigures";
 import { EDA } from "@/config";
+import { ObjectsPerMinute, WhereTrafficGoes } from "./EdaMeasured";
 import { StopLineChart } from "./StopLineChart";
 import { FEEDS, SAMPLE_STATS } from "@/data/stats";
 import { cn } from "@/lib/utils";
@@ -212,6 +213,18 @@ export function DataSection() {
                 </p>
               </div>
             </div>
+          </Card>
+        </Reveal>
+
+        <Reveal delay={0.04} className="md:col-span-2">
+          <Card title="WHERE TRAFFIC GOES">
+            <WhereTrafficGoes />
+          </Card>
+        </Reveal>
+
+        <Reveal delay={0.08} className="md:col-span-2 lg:col-span-1">
+          <Card title="OBJECTS PER MINUTE">
+            <ObjectsPerMinute />
           </Card>
         </Reveal>
       </div>
