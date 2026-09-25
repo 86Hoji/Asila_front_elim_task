@@ -58,13 +58,13 @@ export function sidePoint(s: number, off = 0) {
   };
 }
 
-type Pt = { x: number; y: number };
+export type Pt = { x: number; y: number };
 type Seg = { kind: "L"; to: Pt } | { kind: "Q"; c: Pt; to: Pt };
 
 /** A sampled polyline with cumulative length, for cheap point-at-distance lookups. */
 export type Track = { xs: Float32Array; ys: Float32Array; cum: Float32Array; length: number };
 
-function buildTrack(start: Pt, segs: Seg[], step = 6): Track {
+export function buildTrack(start: Pt, segs: Seg[], step = 6): Track {
   const pts: Pt[] = [start];
   let cur = start;
   for (const seg of segs) {

@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, RefreshCw, UploadCloud, AlertTriangle } from "lucide-react";
-import { AnalysisView } from "./AnalysisView";
+import { AlertTriangle, Check, Download, RefreshCw, UploadCloud, X } from "lucide-react";
+import { ControlRoom } from "@/components/control-room/ControlRoom";
+import { hashString } from "@/components/scene/geometry";
 import { API_BASE, UPLOAD_LIMITS, USE_MOCK } from "@/config";
 import { buildMockResult } from "@/lib/mock-analysis";
+import { cn } from "@/lib/utils";
 import type { AnalysisResult } from "@/types";
 
-const STAGES = ["Uploading", "Detecting", "Tracking", "Applying rules", "Scoring risk"];
+/** Mirrors the landing-page pipeline. */
+const STAGES = ["Decode", "Detect", "Track", "Rules", "Risk"];
+const MOCK_MS = 8000;
+const isMock = () => USE_MOCK || !API_BASE;
 
 type Phase = "idle" | "working" | "done" | "error";
+
+class Cancelled extends Error {}
 
 function readDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -26,7 +33,106 @@ function readDuration(file: File): Promise<number> {
   });
 }
 
-export function TryYourVideoTab() {
+function mmss(ms: number) {
+  const s = Math.floor(ms / 1000);
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function Progress({
+  fileName,
+  progress,
+  startedAt,
+  onCancel,
+}: {
+  fileName: string;
+  progress: number;
+  startedAt: number;
+  onCancel: () => void;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  const current = Math.min(STAGES.length - 1, Math.floor(progress * STAGES.length));
+
+  return (
+    <div className="glass mx-auto max-w-2xl p-6 sm:p-8">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="mono-label text-teal-mid">ANALYZING</h3>
+          <p className="mt-1 truncate font-mono text-xs text-[var(--body)]">{fileName}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:border-[#ff4d6d]"
+        >
+          <X className="h-3.5 w-3.5" /> Cancel
+        </button>
+      </div>
+
+      <div className="mt-6 flex items-end justify-between">
+        <p className="font-mono text-4xl text-foreground sm:text-5xl" aria-live="polite">
+          {Math.round(progress * 100)}%
+        </p>
+        <p className="font-mono text-xs text-muted-foreground">elapsed {mmss(now - startedAt)}</p>
+      </div>
+      <div
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--teal-dim)]"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-200"
+          style={{ width: `${progress * 100}%` }}
+        />
+      </div>
+
+      <ol className="mt-8 grid grid-cols-5 gap-2">
+        {STAGES.map((s, i) => {
+          const done = i < current || progress >= 1;
+          const on = i === current && progress < 1;
+          return (
+            <li key={s} className="relative flex flex-col items-center text-center">
+              {i > 0 && (
+                <span
+                  className={cn(
+                    "absolute right-1/2 top-4 h-px w-full",
+                    i <= current ? "bg-teal-mid" : "bg-border",
+                  )}
+                  aria-hidden
+                />
+              )}
+              <span
+                className={cn(
+                  "relative flex h-8 w-8 items-center justify-center rounded-full border font-mono text-[11px]",
+                  done && "border-teal-mid bg-teal-mid text-primary-foreground",
+                  on && "border-teal bg-background text-teal shadow-[var(--shadow-glow)]",
+                  !done && !on && "border-border bg-background text-muted-foreground",
+                )}
+              >
+                {done ? <Check className="h-4 w-4" /> : i + 1}
+              </span>
+              <span
+                className={cn(
+                  "mt-2 font-mono text-[10px] sm:text-[11px]",
+                  on ? "text-teal" : done ? "text-[var(--body)]" : "text-muted-foreground",
+                )}
+              >
+                {s}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+export function TryYourVideoTab({ onExploreSamples }: { onExploreSamples: () => void }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -34,24 +140,25 @@ export function TryYourVideoTab() {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [startedAt, setStartedAt] = useState(0);
   const lastFile = useRef<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cancelled = useRef(false);
+  const abort = useRef<AbortController | null>(null);
 
+  useEffect(() => () => abort.current?.abort(), []);
   useEffect(
     () => () => {
-      cancelled.current = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     },
     [objectUrl],
   );
 
-  const runMock = useCallback(async (duration: number) => {
+  const runMock = useCallback((duration: number, signal: AbortSignal) => {
     const start = performance.now();
-    return new Promise<AnalysisResult>((resolve) => {
+    return new Promise<AnalysisResult>((resolve, reject) => {
       const tick = () => {
-        if (cancelled.current) return;
-        const p = Math.min(1, (performance.now() - start) / 8000);
+        if (signal.aborted) return reject(new Cancelled());
+        const p = Math.min(1, (performance.now() - start) / MOCK_MS);
         setProgress(p);
         if (p < 1) requestAnimationFrame(tick);
         else resolve(buildMockResult(duration));
@@ -60,18 +167,19 @@ export function TryYourVideoTab() {
     });
   }, []);
 
-  const runReal = useCallback(async (file: File) => {
+  const runReal = useCallback(async (file: File, signal: AbortSignal) => {
     const form = new FormData();
     form.append("video", file);
-    const res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: form });
+    const res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: form, signal });
     if (!res.ok) throw new Error(`The analysis service rejected the upload (${res.status}).`);
     const { job_id: jobId } = (await res.json()) as { job_id: string };
 
     const started = Date.now();
     for (;;) {
+      if (signal.aborted) throw new Cancelled();
       if (Date.now() - started > 10 * 60 * 1000) throw new Error("The analysis timed out.");
       await new Promise((r) => setTimeout(r, 2000));
-      const jr = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+      const jr = await fetch(`${API_BASE}/api/jobs/${jobId}`, { signal });
       if (!jr.ok) throw new Error(`Could not read the job status (${jr.status}).`);
       const job = (await jr.json()) as { status: string; progress: number; error?: string };
       setProgress(job.progress ?? 0);
@@ -79,13 +187,26 @@ export function TryYourVideoTab() {
       if (job.status === "done") break;
     }
 
-    const rr = await fetch(`${API_BASE}/api/jobs/${jobId}/result`);
+    const rr = await fetch(`${API_BASE}/api/jobs/${jobId}/result`, { signal });
     if (!rr.ok) throw new Error(`Could not download the result (${rr.status}).`);
     return (await rr.json()) as AnalysisResult;
   }, []);
 
+  const reset = useCallback(() => {
+    abort.current?.abort();
+    setObjectUrl(null);
+    setResult(null);
+    setPhase("idle");
+    setProgress(0);
+    setError(null);
+    setFileName("");
+  }, []);
+
   const analyze = useCallback(
     async (file: File) => {
+      abort.current?.abort();
+      const ctrl = new AbortController();
+      abort.current = ctrl;
       setError(null);
       setResult(null);
       setProgress(0);
@@ -99,43 +220,39 @@ export function TryYourVideoTab() {
       }
       if (file.size > UPLOAD_LIMITS.maxBytes) {
         setPhase("error");
-        setError(`That file is ${(file.size / 1024 / 1024).toFixed(0)} MB — the limit is 200 MB.`);
+        setError(
+          `That file is ${(file.size / 1024 / 1024).toFixed(0)} MB — the limit is ${UPLOAD_LIMITS.maxBytes / 1024 / 1024} MB.`,
+        );
         return;
       }
 
-      setPhase("working");
       try {
         const duration = await readDuration(file);
         if (duration > UPLOAD_LIMITS.maxSeconds) {
           setPhase("error");
-          setError(`That clip is ${Math.round(duration)}s long — the limit is 2 minutes.`);
+          setError(
+            `That clip is ${Math.round(duration)} s long — the limit is ${UPLOAD_LIMITS.maxSeconds / 60} minutes.`,
+          );
           return;
         }
-        const url = URL.createObjectURL(file);
-        setObjectUrl(url);
-
-        const useMock = USE_MOCK || !API_BASE;
-        const r = useMock ? await runMock(duration) : await runReal(file);
-        if (cancelled.current) return;
+        setStartedAt(Date.now());
+        setPhase("working");
+        const r = isMock()
+          ? await runMock(duration, ctrl.signal)
+          : await runReal(file, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        setObjectUrl(URL.createObjectURL(file));
         setResult(r);
         setPhase("done");
       } catch (e) {
+        if (e instanceof Cancelled || (e instanceof DOMException && e.name === "AbortError"))
+          return;
         setPhase("error");
         setError(e instanceof Error ? e.message : "Something went wrong during the analysis.");
       }
     },
     [runMock, runReal],
   );
-
-  const reset = () => {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    setObjectUrl(null);
-    setResult(null);
-    setPhase("idle");
-    setProgress(0);
-    setError(null);
-    setFileName("");
-  };
 
   const downloadJson = () => {
     if (!result) return;
@@ -149,11 +266,11 @@ export function TryYourVideoTab() {
 
   if (phase === "done" && result) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-mono text-xs text-muted-foreground">
-            {fileName} · {result.events.length} events · {result.duration.toFixed(1)}s
-            {(USE_MOCK || !API_BASE) && " · simulated result"}
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+            {fileName} · {result.events.length} events · {result.duration.toFixed(1)} s
+            {isMock() && " · simulated result (demo mode)"}
           </p>
           <div className="flex gap-2">
             <button
@@ -161,60 +278,42 @@ export function TryYourVideoTab() {
               onClick={downloadJson}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs text-foreground transition-colors hover:border-teal-mid"
             >
-              <Download className="h-3.5 w-3.5" /> Download JSON
+              <Download className="h-3.5 w-3.5" /> JSON
             </button>
             <button
               type="button"
               onClick={reset}
               className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Analyze another video
+              <RefreshCw className="h-3.5 w-3.5" /> Analyze another
             </button>
           </div>
         </div>
-        <AnalysisView
+        <ControlRoom
+          key={objectUrl ?? fileName}
           result={result}
-          mode="video"
+          title={`UPLOAD · ${fileName}`}
           src={result.annotated_video_url ?? objectUrl ?? undefined}
+          seed={hashString(fileName)}
         />
       </div>
     );
   }
 
   if (phase === "working") {
-    const stage = STAGES[Math.min(STAGES.length - 1, Math.floor(progress * STAGES.length))]!;
     return (
-      <div className="glass mx-auto max-w-xl p-8">
-        <h3 className="mono-label text-teal-mid">ANALYZING // {fileName}</h3>
-        <p className="mt-6 font-mono text-4xl text-foreground">{Math.round(progress * 100)}%</p>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--teal-dim)]">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-200"
-            style={{ width: `${progress * 100}%` }}
-          />
-        </div>
-        <ul className="mt-6 grid gap-2">
-          {STAGES.map((s, i) => {
-            const done = progress * STAGES.length > i + 1;
-            const current = s === stage;
-            return (
-              <li
-                key={s}
-                className={`font-mono text-xs ${
-                  current ? "text-teal" : done ? "text-[var(--body)]" : "text-muted-foreground"
-                }`}
-              >
-                {done ? "✓" : current ? "›" : "·"} {s}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <Progress fileName={fileName} progress={progress} startedAt={startedAt} onCancel={reset} />
     );
   }
 
+  const limits = [
+    UPLOAD_LIMITS.accept,
+    `up to ${UPLOAD_LIMITS.maxSeconds / 60} min`,
+    `up to ${UPLOAD_LIMITS.maxBytes / 1024 / 1024} MB`,
+  ];
+
   return (
-    <div className="mx-auto max-w-xl">
+    <div className="mx-auto max-w-2xl">
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -227,25 +326,63 @@ export function TryYourVideoTab() {
           const f = e.dataTransfer.files?.[0];
           if (f) void analyze(f);
         }}
-        className={`glass flex flex-col items-center justify-center border-dashed p-12 text-center transition-colors ${
-          dragging ? "border-teal bg-accent" : ""
-        }`}
+        className={cn(
+          "glass relative flex min-h-[340px] flex-col items-center justify-center overflow-hidden border-dashed p-8 text-center transition-colors sm:min-h-[400px] sm:p-12",
+          dragging && "border-teal bg-accent",
+        )}
       >
-        <UploadCloud className="h-8 w-8 text-teal" />
-        <h3 className="mt-5 text-lg font-semibold">Drop an .mp4 here</h3>
-        <p className="mt-2 text-sm text-[var(--body)]">
-          Up to 2 minutes and 200 MB.{" "}
-          {USE_MOCK || !API_BASE
-            ? "Demo mode: your clip never leaves this browser and the result is simulated."
-            : "Your clip is sent to our analysis server for processing and is not stored."}
-        </p>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="mt-6 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[var(--shadow-glow)]"
-        >
-          Browse files
-        </button>
+        {/* Animated scanning grid */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60 motion-reduce:hidden"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,194,188,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,194,188,0.08) 1px, transparent 1px), radial-gradient(ellipse at center, rgba(0,255,235,0.08), transparent 70%)",
+            backgroundSize: "40px 40px, 40px 40px, 100% 100%",
+            animation: "scan-grid 6s linear infinite",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-[rgba(0,255,235,0.08)] to-transparent motion-reduce:hidden"
+          style={{ animation: "scan-line 4s linear infinite" }}
+          aria-hidden
+        />
+
+        <div className="relative flex flex-col items-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-teal-mid bg-background/60 shadow-[var(--shadow-glow)]">
+            <UploadCloud className="h-6 w-6 text-teal" />
+          </span>
+          <h3 className="mt-5 text-xl font-semibold sm:text-2xl">Drop a traffic clip here</h3>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {limits.map((l) => (
+              <span
+                key={l}
+                className="rounded-full border border-border bg-background/60 px-3 py-1 font-mono text-[11px] text-[var(--body)]"
+              >
+                {l}
+              </span>
+            ))}
+          </div>
+          <p className="mt-4 max-w-md text-sm text-[var(--body)]">
+            {isMock()
+              ? "Demo mode: your clip never leaves this browser and the result is simulated."
+              : "Your clip is sent to our analysis server for processing and is not stored."}
+          </p>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="mt-6 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[var(--shadow-glow)]"
+          >
+            Browse files
+          </button>
+          <button
+            type="button"
+            onClick={onExploreSamples}
+            className="mt-4 text-xs text-teal-mid underline-offset-4 hover:text-teal hover:underline"
+          >
+            No clip at hand? Explore the sample feeds
+          </button>
+        </div>
         <input
           ref={inputRef}
           type="file"

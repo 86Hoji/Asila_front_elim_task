@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SampleVideosTab } from "@/components/dashboard/SampleVideosTab";
 import { TryYourVideoTab } from "@/components/dashboard/TryYourVideoTab";
 import { OperatorTab } from "@/components/dashboard/OperatorTab";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const title = "ASILA Dashboard — live traffic event demo";
 const description =
-  "Play back detected traffic violations on a scene schematic, watch the accident-risk curve, or upload your own clip and see the same analysis end to end.";
+  "A traffic control room for our detector: replay the sample feeds on a live scene drawing with a risk gauge and event timeline, upload your own clip, or review the shift summary.";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -34,11 +34,31 @@ type TabId = (typeof TABS)[number]["id"];
 
 function Dashboard() {
   const [tab, setTab] = useState<TabId>("samples");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const select = (i: number, focus = false) => {
+    const next = TABS[(i + TABS.length) % TABS.length]!;
+    setTab(next.id);
+    if (focus) tabRefs.current[(i + TABS.length) % TABS.length]?.focus();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent, i: number) => {
+    const keys: Record<string, number> = {
+      ArrowRight: i + 1,
+      ArrowLeft: i - 1,
+      Home: 0,
+      End: TABS.length - 1,
+    };
+    const to = keys[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    select(to, true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-5 py-3 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             <Link
               to="/"
@@ -47,7 +67,7 @@ function Dashboard() {
               <ArrowLeft className="h-4 w-4" /> Back
             </Link>
             <span className="text-base font-bold tracking-[0.18em] text-foreground">ASILA</span>
-            <span className="mono-label hidden text-teal-mid sm:inline">LIVE DEMO</span>
+            <span className="mono-label hidden text-teal-mid sm:inline">CONTROL ROOM</span>
           </div>
 
           <div
@@ -55,14 +75,22 @@ function Dashboard() {
             aria-label="Dashboard views"
             className="scrollbar-thin-teal flex gap-1 overflow-x-auto rounded-full border border-border p-1"
           >
-            {TABS.map((t) => (
+            {TABS.map((t, i) => (
               <button
                 key={t.id}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                id={`tab-${t.id}`}
                 role="tab"
+                type="button"
                 aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
+                aria-controls={`panel-${t.id}`}
+                tabIndex={tab === t.id ? 0 : -1}
+                onClick={() => select(i)}
+                onKeyDown={(e) => onKeyDown(e, i)}
                 className={cn(
-                  "shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors",
+                  "flex-1 shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-colors md:flex-none",
                   tab === t.id
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -75,9 +103,14 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1400px] px-5 py-6 md:py-8">
+      <main
+        id={`panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-5 md:py-8"
+      >
         {tab === "samples" && <SampleVideosTab />}
-        {tab === "upload" && <TryYourVideoTab />}
+        {tab === "upload" && <TryYourVideoTab onExploreSamples={() => select(0, true)} />}
         {tab === "operator" && <OperatorTab />}
       </main>
     </div>
