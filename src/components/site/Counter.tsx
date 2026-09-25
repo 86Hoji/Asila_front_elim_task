@@ -5,10 +5,13 @@ export function Counter({
   value,
   prefix = "",
   suffix = "",
+  decimals = 0,
 }: {
   value: number;
   prefix?: string;
   suffix?: string;
+  /** Digits after the decimal point (e.g. 1 for "1.8"). */
+  decimals?: number;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -25,17 +28,17 @@ export function Counter({
     const tick = (now: number) => {
       const p = Math.min(1, (now - start) / dur);
       const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(value * eased));
+      setDisplay(Math.round(value * eased * 10 ** decimals) / 10 ** decimals);
       if (p < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [inView, reduced, value]);
+  }, [inView, reduced, value, decimals]);
 
   return (
     <span ref={ref} className="font-mono text-3xl text-foreground md:text-4xl">
       {prefix}
-      {display}
+      {display.toFixed(decimals)}
       {suffix}
     </span>
   );

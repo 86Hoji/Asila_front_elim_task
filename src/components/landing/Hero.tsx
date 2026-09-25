@@ -63,8 +63,8 @@ export function Hero() {
                 <dd>
                   <Counter
                     value={m.value}
-                    prefix={"prefix" in m ? m.prefix : ""}
                     suffix={m.suffix}
+                    decimals={"decimals" in m ? m.decimals : 0}
                   />
                   <p className="mt-2 text-xs text-muted-foreground">{m.label}</p>
                 </dd>

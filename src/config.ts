@@ -11,11 +11,22 @@ export const USE_MOCK = true;
 /** Sample footage is under NDA — keep false to render the scene schematic instead. */
 export const SHOW_SAMPLE_VIDEOS = false;
 
+import { RESULTS } from "@/content/results";
+
 export const HERO_METRICS = [
   { value: 9, suffix: "", label: "event classes" },
-  { value: 1, suffix: "", label: "false alarm in 18 min" },
+  {
+    value: RESULTS.falseAlarms.after,
+    suffix: "",
+    label: `false alarm in ${RESULTS.falseAlarms.minutes} min`,
+  },
   { value: 4, suffix: "K", label: "· 29.97 fps input" },
-  { value: 3, prefix: "< ", suffix: "×", label: "real-time budget" },
+  {
+    value: RESULTS.runtime.typical,
+    decimals: 1,
+    suffix: "×",
+    label: `processing time vs. video length (limit ${RESULTS.runtime.limit}×)`,
+  },
 ] as const;
 
 export const LINKS = {
