@@ -19,6 +19,7 @@ import {
   EVENT_CLASS_LABELS,
   formatTime,
 } from "@/lib/event-classes";
+import { RESULTS } from "@/content/results";
 import { FEEDS, SAMPLE_STATS } from "@/data/stats";
 
 /** First occurrence of a class across the sample feeds, e.g. "C3896 · 00:22.4-00:25.1 (2.7 s)". */
@@ -52,6 +53,61 @@ const FAILURES = [
   },
 ];
 
+function HowWeMeasured() {
+  const { labels, devVideos, heldOutVideos, scoreA, heldOutScore } = RESULTS;
+  return (
+    <div className="glass mt-12 p-6 md:p-8">
+      <h3 className="mono-label text-teal-mid">HOW WE MEASURED</h3>
+      <ul className="mt-4 space-y-2 text-sm text-[var(--body)]">
+        <li>
+          We labelled all {labels.videos} sample videos ourselves, following the organisers&apos;
+          start/end conventions: {labels.confirmed} candidate events confirmed, {labels.rejected}{" "}
+          rejected.
+        </li>
+        <li>
+          Thresholds were tuned only on {devVideos.join(" and ")}. {heldOutVideos.join(" and ")} are
+          held out for an honest check.
+        </li>
+      </ul>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <div className="glass-raised p-5">
+          <p className="mono-label">Score A on our dev labels ({devVideos.join(" + ")})</p>
+          <ol className="mt-4 space-y-3">
+            {scoreA.map((s, i) => (
+              <li key={s.step} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5">
+                <span className="text-xs text-[var(--body)]">
+                  <span className="mr-2 font-mono text-muted-foreground">{i + 1}</span>
+                  {s.step}
+                </span>
+                <span className="font-mono text-sm text-foreground">{s.value.toFixed(3)}</span>
+                <span className="col-span-2 h-2 overflow-hidden rounded-full bg-[rgba(0,194,188,0.08)]">
+                  <span
+                    className="block h-full rounded-full bg-teal"
+                    style={{
+                      width: `${s.value * 100}%`,
+                      opacity: 0.45 + (i / scoreA.length) * 0.55,
+                    }}
+                  />
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="glass-raised flex flex-col p-5">
+          <p className="mono-label">Held-out videos ({heldOutVideos.join(" + ")})</p>
+          <p className="mt-4 font-mono text-2xl text-foreground">
+            {heldOutScore === null ? "being measured" : heldOutScore.toFixed(3)}
+          </p>
+        </div>
+      </div>
+      <p className="mt-4 font-mono text-[11px] text-muted-foreground">
+        Scores on our own labels, not the hidden test set.
+      </p>
+    </div>
+  );
+}
+
 export function Results() {
   const chartData = COUNTS.map((c) => ({
     ...c,
@@ -69,8 +125,12 @@ export function Results() {
         </h2>
       </Reveal>
 
+      <Reveal delay={0.08}>
+        <HowWeMeasured />
+      </Reveal>
+
       <Reveal delay={0.1}>
-        <div className="glass mt-12 p-6 md:p-8">
+        <div className="glass mt-8 p-6 md:p-8">
           <h3 className="mono-label text-teal-mid">DETECTED EVENTS PER CLASS</h3>
           <div className="mt-6 h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
