@@ -20,16 +20,72 @@ import {
   formatTime,
 } from "@/lib/event-classes";
 import { RESULTS } from "@/content/results";
+import { TRAJECTORIES, type Trajectory } from "@/data/eda";
 import { FEEDS, SAMPLE_STATS } from "@/data/stats";
+import type { EventClass } from "@/types";
 
 /** First occurrence of a class across the sample feeds, e.g. "C3896 · 00:22.4-00:25.1 (2.7 s)". */
-function exampleFor(label: string) {
+const fmtSpan = (id: string, start: number, end: number) =>
+  `${id} · ${formatTime(start)}-${formatTime(end)} (${(end - start).toFixed(1)} s)`;
+
+/** First real example: a tracked event from eda_stats.json, else the first event in samples.json. */
+function exampleFor(label: EventClass) {
+  const traj = TRAJECTORIES[label]?.[0];
+  if (traj) return { text: fmtSpan(traj.id, traj.start, traj.end), traj };
   for (const f of FEEDS) {
     const e = f.events.find((ev) => ev[2] === label);
-    if (e)
-      return `${f.id} · ${formatTime(e[0])}-${formatTime(e[1])} (${(e[1] - e[0]).toFixed(1)} s)`;
+    if (e) return { text: fmtSpan(f.id, e[0], e[1]), traj: null };
   }
   return null;
+}
+
+/** The event's trajectory drawn on the scene map: start dot, end arrow, class colour. */
+function TrajectoryThumb({ traj, cls }: { traj: Trajectory; cls: EventClass }) {
+  const color = EVENT_CLASS_COLORS[cls];
+  const W = 1280;
+  const H = 720;
+  const marker = `arrow-${cls}`;
+  return (
+    <div className="relative mt-4 overflow-hidden rounded-xl border border-border">
+      <img
+        src="/eda/scene_map_dark.jpg"
+        alt=""
+        className="block h-auto w-full opacity-50"
+        aria-hidden
+      />
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="absolute inset-0 h-full w-full"
+        role="img"
+        aria-label={`Trajectory of the ${cls} example on the scene map`}
+      >
+        <defs>
+          <marker id={marker} markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill={color} />
+          </marker>
+        </defs>
+        {traj.polylines.map((line, i) => {
+          if (line.length < 2) return null;
+          const pts = line.map(([x, y]) => `${Math.round(x * W)},${Math.round(y * H)}`).join(" ");
+          const [x0, y0] = line[0]!;
+          return (
+            <g key={i}>
+              <polyline
+                points={pts}
+                fill="none"
+                stroke={color}
+                strokeWidth={7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                markerEnd={`url(#${marker})`}
+              />
+              <circle cx={Math.round(x0 * W)} cy={Math.round(y0 * H)} r={13} fill={color} />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
 }
 
 const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({
@@ -200,9 +256,10 @@ export function Results() {
               </div>
               <h3 className="mt-3 text-lg font-semibold">{EVENT_CLASS_LABELS[c.label]}</h3>
               <p className="mt-2 text-sm text-[var(--body)]">{EVENT_CLASS_DEFINITIONS[c.label]}</p>
+              {c.example?.traj && <TrajectoryThumb traj={c.example.traj} cls={c.label} />}
               {c.example && (
-                <p className="mt-5 rounded-xl border border-border px-3 py-2 font-mono text-[11px] text-[var(--body)]">
-                  Example: {c.example}
+                <p className="mt-3 rounded-xl border border-border px-3 py-2 font-mono text-[11px] text-[var(--body)]">
+                  Example: {c.example.text}
                 </p>
               )}
               <p className="mt-4 font-mono text-xs text-muted-foreground">
