@@ -288,6 +288,19 @@ export function TryYourVideoTab({ onExploreSamples }: { onExploreSamples: () => 
             </button>
           </div>
         </div>
+        {result.scene_matched === false && (
+          <div
+            role="status"
+            className="glass flex items-start gap-3 border-l-2 p-4"
+            style={{ borderLeftColor: "#ffd23f" }}
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#ffd23f" }} />
+            <p className="text-sm text-foreground">
+              Camera not recognised: rules tied to this junction (lanes, stop line, signal,
+              crossings) were disabled; only general events are reported.
+            </p>
+          </div>
+        )}
         <ControlRoom
           key={objectUrl ?? fileName}
           result={result}

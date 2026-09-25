@@ -55,5 +55,5 @@ export function buildMockResult(duration: number, seed = 42): AnalysisResult {
     risk.push([t, +Math.min(0.98, Math.max(0, v)).toFixed(3)]);
   }
 
-  return { duration: +duration.toFixed(2), fps: 29.97, events, risk };
+  return { duration: +duration.toFixed(2), fps: 29.97, events, risk, scene_matched: true };
 }

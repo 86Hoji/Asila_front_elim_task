@@ -82,7 +82,7 @@ With `VITE_API_BASE` set and `USE_MOCK = false`, the upload tab talks to the ser
 | ------------------------------- | ----------------------------------------------------------------- |
 | `POST /api/analyze` (form field `video`) | `{"job_id": string}`                                     |
 | `GET /api/jobs/{id}`            | `{"status": "queued" \| "running" \| "done" \| "error", "progress": 0..1, "error"?: string}` |
-| `GET /api/jobs/{id}/result`     | `{"duration", "fps", "events", "risk", "annotated_video_url"?}`   |
+| `GET /api/jobs/{id}/result`     | `{"duration", "fps", "events", "risk", "annotated_video_url"?, "scene_matched"?}`   |
 
 ## Project layout
 

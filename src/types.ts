@@ -26,6 +26,8 @@ export type AnalysisResult = {
   events: DetectedEvent[];
   risk: RiskPoint[];
   annotated_video_url?: string;
+  /** False when the server did not recognise the camera, so junction-specific rules were off. */
+  scene_matched?: boolean;
 };
 
 export type SampleVideo = AnalysisResult & {
