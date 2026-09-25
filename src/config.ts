@@ -93,7 +93,6 @@ export const EDA = {
   resolution: "4K",
   fps: 29.97,
   codec: "H.264 10-bit 4:2:2",
-  timeBudget: 3,
   cameraDriftPct: 3,
   signalCycle: {
     totalSec: 75,
@@ -105,6 +104,4 @@ export const EDA = {
     red: [0, 4] as [number, number],
     green: [50, 66] as [number, number],
   },
-  falseAlarmsBefore: [66, 113] as [number, number],
-  falseAlarmsAfter: 1,
 };

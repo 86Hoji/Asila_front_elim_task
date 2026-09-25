@@ -11,7 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { EDA } from "@/config";
-import { SAMPLE_STATS } from "@/data/stats";
+import { RESULTS } from "@/content/results";
 import { cn } from "@/lib/utils";
 
 type Kind = "LEARNED" | "RULE-BASED" | "INPUT" | "OUTPUT";
@@ -24,7 +24,8 @@ type Node = {
   detail: string;
 };
 
-const [faBefore0, faBefore1] = EDA.falseAlarmsBefore;
+const [faBefore0, faBefore1] = RESULTS.falseAlarms.before;
+const ordinal = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
 
 const MAIN: Node[] = [
   {
@@ -32,14 +33,14 @@ const MAIN: Node[] = [
     title: "Video",
     kind: "INPUT",
     note: `${EDA.resolution} · H.264 · ${EDA.fps} fps`,
-    detail: `${EDA.resolution} H.264, 10-bit 4:2:2 at ${EDA.fps} fps. This profile is decoded on the CPU, so decoding cost drives the time budget.`,
+    detail: `${EDA.resolution} H.264, 10-bit 4:2:2, ${EDA.fps} fps. Decoded on the CPU with multi-threaded PyAV, skipping B-frames and downscaling to ${RESULTS.decode.widthPx} px wide.`,
   },
   {
     id: "sampling",
     title: "Frame sampling",
     kind: "RULE-BASED",
-    note: "fixed stride",
-    detail: `A fixed frame stride derived from the video metadata keeps runs deterministic; a watchdog only steps in if a video risks exceeding the ${EDA.timeBudget}x time budget.`,
+    note: `every ${ordinal(RESULTS.stride.gpu)} / ${ordinal(RESULTS.stride.cpu)} frame`,
+    detail: `The stride is fixed per device, every ${ordinal(RESULTS.stride.gpu)} frame on a GPU and every ${ordinal(RESULTS.stride.cpu)} on a CPU, so two runs give identical results. Safety fuses only trigger if a video is about to exceed the time budget.`,
   },
   {
     id: "detect",
@@ -47,7 +48,7 @@ const MAIN: Node[] = [
     kind: "LEARNED",
     note: "vehicles · pedestrians",
     detail:
-      "Open-weights YOLO11s detects vehicles and pedestrians. Without a GPU the pipeline falls back to YOLO11n on every 6th frame.",
+      "Open-weights YOLO11s pretrained on COCO, used as released (no fine-tuning). Without a GPU it falls back to YOLO11n.",
   },
   {
     id: "track",
@@ -62,7 +63,7 @@ const MAIN: Node[] = [
     title: "Scene alignment",
     kind: "RULE-BASED",
     note: "lanes · stop line · crossings",
-    detail: `Lanes with their legal directions, the stop line, zebra crossings and the junction area are mapped once and re-aligned to every video, because the camera drifts up to ${EDA.cameraDriftPct}% of the frame width between recordings.`,
+    detail: `Lanes with their legal directions, the stop line, zebra crossings and the junction area are mapped once and re-aligned to every video, because the camera drifts up to ${EDA.cameraDriftPct}% of the frame width between recordings. All geometry is computed on the road plane in metres.`,
   },
   {
     id: "phase",
@@ -70,7 +71,7 @@ const MAIN: Node[] = [
     kind: "RULE-BASED",
     note: "signal state from pixels",
     detail:
-      "Reads the signal state directly from the pixels of the signal heads, with no training; works in noon sun and at dusk.",
+      "Reads the signal from the pixels of the signal heads, with no training. The pedestrian section is the main signal; the vehicle section confirms it. Works in noon sun and at dusk.",
   },
   {
     id: "rules",
@@ -112,7 +113,7 @@ const BRANCH: Node[] = [
     title: "Causal risk score",
     kind: "RULE-BASED",
     note: "Part B · past frames only",
-    detail: `Risk rises as the minimum time-to-collision drops, using only frames already seen. Tuning cut false alarms from ${faBefore0}-${faBefore1} to ${EDA.falseAlarmsAfter} across ${SAMPLE_STATS.totalMinutes} minutes of footage.`,
+    detail: `Risk rises as the minimum time-to-collision drops, using only frames already seen. Tuning cut false alarms from ${faBefore0}-${faBefore1} to ${RESULTS.falseAlarms.after} across ${RESULTS.falseAlarms.minutes} minutes of footage.`,
   },
 ];
 
