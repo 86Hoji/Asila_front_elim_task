@@ -56,6 +56,10 @@ Everything that changes between the demo and the final submission lives in
 `events` (`[start, end, label]`) and `risk` (`[t, score]` at 10 Hz). All counts on
 the landing page and dashboard are computed from this file.
 
+> The risk curves currently in the file are placeholders (one short excursion above
+> 0.5 across all four videos, matching the "1 false alarm" headline). Replace them
+> by running `data:convert` on the model's real predictions.
+
 Convert the model's output into this format with:
 
 ```sh
