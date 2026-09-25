@@ -101,14 +101,10 @@ function EdaImage({
   }, []);
   return (
     <>
-      <img
-        ref={imgRef}
-        src={src}
-        alt={alt}
-        loading="lazy"
-        onLoad={done}
-        className={loaded ? "block h-auto w-full" : "hidden"}
-      />
+      {/* Tap to open full size: the labels in the figures are small on phones. */}
+      <a href={src} target="_blank" rel="noreferrer" className={loaded ? "block" : "hidden"}>
+        <img ref={imgRef} src={src} alt={alt} onLoad={done} className="block h-auto w-full" />
+      </a>
       {!loaded && fallback}
     </>
   );
@@ -166,9 +162,9 @@ export function DataSection() {
 
         <Reveal delay={0.04} className="md:col-span-2 lg:row-span-2">
           <Card title="SCENE MAP">
-            <Figure caption="Our own drawing of the junction: lanes and their directions, the stop line, three crossings, the junction area and refuge islands — the zones every rule reasons about.">
+            <Figure caption="Our scene map in the camera view: lanes and their directions, stop line, crossings, intersection, refuge islands and signal heads, the zones every rule reasons about.">
               <EdaImage
-                src="/eda/scene_map_dark.png"
+                src="/eda/scene_map_dark.jpg"
                 alt="Scene map: lanes with their directions, stop line, crossings, junction area and refuge islands."
                 fallback={<SceneMapFigure />}
               />
@@ -197,7 +193,7 @@ export function DataSection() {
             <div className="grid items-center gap-6 lg:grid-cols-[2fr_1fr]">
               <div className="overflow-hidden rounded-xl border border-border">
                 <EdaImage
-                  src="/eda/velocity_field_dark.png"
+                  src="/eda/velocity_field_dark.jpg"
                   alt="Mean velocity field: average track direction per grid cell, coloured by heading."
                   fallback={<VelocityFieldFigure />}
                   onLoaded={() => setVelocityImage(true)}
