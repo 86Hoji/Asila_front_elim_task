@@ -17,10 +17,25 @@ import {
   EVENT_CLASS_COLORS,
   EVENT_CLASS_DEFINITIONS,
   EVENT_CLASS_LABELS,
+  formatTime,
 } from "@/lib/event-classes";
-import { SAMPLE_STATS } from "@/data/stats";
+import { FEEDS, SAMPLE_STATS } from "@/data/stats";
 
-const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({ label, count }));
+/** First occurrence of a class across the sample feeds, e.g. "C3896 · 00:22.4-00:25.1 (2.7 s)". */
+function exampleFor(label: string) {
+  for (const f of FEEDS) {
+    const e = f.events.find((ev) => ev[2] === label);
+    if (e)
+      return `${f.id} · ${formatTime(e[0])}-${formatTime(e[1])} (${(e[1] - e[0]).toFixed(1)} s)`;
+  }
+  return null;
+}
+
+const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({
+  label,
+  count,
+  example: exampleFor(label),
+}));
 
 const FAILURES = [
   {
@@ -116,17 +131,11 @@ export function Results() {
               </div>
               <h3 className="mt-3 text-lg font-semibold">{EVENT_CLASS_LABELS[c.label]}</h3>
               <p className="mt-2 text-sm text-[var(--body)]">{EVENT_CLASS_DEFINITIONS[c.label]}</p>
-              <div
-                className="mt-5 flex h-24 items-center justify-center rounded-xl border border-border"
-                style={{
-                  background:
-                    "repeating-linear-gradient(135deg, rgba(0,194,188,0.05) 0 12px, transparent 12px 24px)",
-                }}
-              >
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  [TODO: example clip]
-                </span>
-              </div>
+              {c.example && (
+                <p className="mt-5 rounded-xl border border-border px-3 py-2 font-mono text-[11px] text-[var(--body)]">
+                  Example: {c.example}
+                </p>
+              )}
               <p className="mt-4 font-mono text-xs text-muted-foreground">
                 {c.count} detected in {SAMPLE_STATS.totalMinutes} min
               </p>
