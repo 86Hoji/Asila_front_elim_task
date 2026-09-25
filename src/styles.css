@@ -261,28 +261,6 @@
 
 /* Control room ------------------------------------------------------ */
 
-@keyframes scene-pulse {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
-@keyframes scene-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
 @keyframes feed-in {
   from {
     opacity: 0;
@@ -322,16 +300,6 @@
   100% {
     transform: translateY(400%);
   }
-}
-
-.scene-pulse {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: scene-pulse 1.4s ease-in-out infinite;
-}
-
-.scene-blink {
-  animation: scene-blink 0.9s ease-in-out infinite;
 }
 
 .feed-in {

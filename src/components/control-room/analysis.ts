@@ -125,3 +125,13 @@ export function sparkPath(risk: RiskPoint[], duration: number, buckets = 80) {
     )
     .join("");
 }
+
+/** Indices of the events active at time t, as a stable string key. */
+export function activeKey(events: DetectedEvent[], t: number) {
+  let key = "";
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i]!;
+    if (t >= e[0] && t <= e[1]) key += key ? `,${i}` : `${i}`;
+  }
+  return key;
+}

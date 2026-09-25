@@ -157,6 +157,9 @@ export class PlayerStore {
   }
 }
 
+/** A clock that never moves, for views without playback (hooks still need a store). */
+export const STILL_STORE = new PlayerStore(0);
+
 /** One store per mounted view. Key the view by feed/clip to get a fresh clock. */
 export function usePlayerStore(duration: number) {
   const [store] = useState(() => new PlayerStore(duration));

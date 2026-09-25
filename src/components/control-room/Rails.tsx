@@ -1,10 +1,16 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { CornerDownRight } from "lucide-react";
 import { RISK_THRESHOLD } from "@/config";
-import { activeKey } from "@/components/scene/overlays";
 import { EVENT_CLASS_COLORS, EVENT_CLASS_LABELS, formatTime } from "@/lib/event-classes";
 import { cn } from "@/lib/utils";
-import { RISK_STATE_COLOR, riskAt, riskState, startedCount, type Model } from "./analysis";
+import {
+  RISK_STATE_COLOR,
+  riskAt,
+  riskState,
+  startedCount,
+  type Model,
+  activeKey,
+} from "./analysis";
 import { usePlayerTime, useTimeSelector, type PlayerStore } from "./player-store";
 
 /** Red flash overlay, re-mounted (and so replayed) every time risk enters ALARM. */

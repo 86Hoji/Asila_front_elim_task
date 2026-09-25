@@ -1,22 +1,43 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
-import { activeKey } from "@/components/scene/overlays";
 import { EVENT_CLASS_COLORS, EVENT_CLASS_LABELS, formatTime } from "@/lib/event-classes";
 import { cn } from "@/lib/utils";
 import type { EventClass } from "@/types";
-import type { Model } from "./analysis";
-import { useTimeSelector, type PlayerStore } from "./player-store";
+import { activeKey, type Model } from "./analysis";
+import { STILL_STORE, useTimeSelector, type PlayerStore } from "./player-store";
 
 type SortKey = "start" | "duration" | "class";
 
 export const EventTable = memo(function EventTable({
   store,
   model,
+  defaultOpen = false,
+  highlight = null,
+  onRowClick,
 }: {
-  store: PlayerStore;
+  store?: PlayerStore | undefined;
   model: Model;
+  defaultOpen?: boolean;
+  /** Row to mark as selected (report mode). */
+  highlight?: number | null;
+  onRowClick?: ((index: number) => void) | undefined;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
+  const rootRef = useRef<HTMLElement>(null);
+  const pick = (i: number, t: number) => {
+    store?.seek(t);
+    onRowClick?.(i);
+  };
+
+  // Bring the selected row into view (only the visible layout: cards or table).
+  useEffect(() => {
+    if (highlight === null) return;
+    setOpen(true);
+    const el = [...(rootRef.current?.querySelectorAll(`[data-row="${highlight}"]`) ?? [])].find(
+      (n) => (n as HTMLElement).offsetParent !== null,
+    );
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [highlight]);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "start", dir: 1 });
   const [filter, setFilter] = useState<EventClass | "all">("all");
 
@@ -35,7 +56,7 @@ export const EventTable = memo(function EventTable({
   }, [model.events, filter, sort]);
 
   const select = useCallback((t: number) => activeKey(model.events, t), [model.events]);
-  const activeStr = useTimeSelector(store, select);
+  const activeStr = useTimeSelector(store ?? STILL_STORE, select);
   const active = new Set(activeStr ? activeStr.split(",").map(Number) : []);
 
   const header = (key: SortKey, label: string) => (
@@ -57,7 +78,7 @@ export const EventTable = memo(function EventTable({
   );
 
   return (
-    <section className="glass-flat min-w-0 p-4 sm:p-5" aria-label="All events">
+    <section ref={rootRef} className="glass-flat min-w-0 p-4 sm:p-5" aria-label="All events">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -97,13 +118,13 @@ export const EventTable = memo(function EventTable({
           {/* Phones: cards */}
           <ul className="mt-4 space-y-2 md:hidden">
             {rows.map(({ e, i }) => (
-              <li key={i}>
+              <li key={i} data-row={i}>
                 <button
                   type="button"
-                  onClick={() => store.seek(e[0])}
+                  onClick={() => pick(i, e[0])}
                   className={cn(
                     "glass-raised flex w-full items-center gap-3 p-3 text-left",
-                    active.has(i) && "border-teal-mid",
+                    (active.has(i) || highlight === i) && "border-teal-mid",
                   )}
                 >
                   <span
@@ -138,14 +159,16 @@ export const EventTable = memo(function EventTable({
               {rows.map(({ e, i }) => (
                 <tr
                   key={i}
+                  data-row={i}
+                  aria-selected={highlight === i}
                   tabIndex={0}
-                  onClick={() => store.seek(e[0])}
+                  onClick={() => pick(i, e[0])}
                   onKeyDown={(ev) => {
-                    if (ev.key === "Enter") store.seek(e[0]);
+                    if (ev.key === "Enter") pick(i, e[0]);
                   }}
                   className={cn(
                     "cursor-pointer border-b border-border/60 transition-colors hover:bg-accent",
-                    active.has(i) && "bg-accent",
+                    (active.has(i) || highlight === i) && "bg-accent",
                   )}
                 >
                   <td className="py-2">

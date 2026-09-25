@@ -1,4 +1,4 @@
-import { memo, useRef } from "react";
+import { memo, useCallback, useRef } from "react";
 import {
   HelpCircle,
   Pause,
@@ -10,12 +10,18 @@ import {
   SkipForward,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PillLayer, SceneView } from "@/components/scene/SceneView";
-import { formatTime } from "@/lib/event-classes";
+import { EVENT_CLASS_COLORS, formatTime } from "@/lib/event-classes";
+import type { DetectedEvent } from "@/types";
 import { cn } from "@/lib/utils";
-import type { Model } from "./analysis";
+import { activeKey, type Model } from "./analysis";
 import { nextEventStart, prevEventStart } from "./navigation";
-import { usePlayerControls, usePlayerTime, useTimeEffect, type PlayerStore } from "./player-store";
+import {
+  usePlayerControls,
+  usePlayerTime,
+  useTimeEffect,
+  useTimeSelector,
+  type PlayerStore,
+} from "./player-store";
 
 const SPEEDS = [0.5, 1, 2, 4];
 
@@ -194,6 +200,51 @@ export const Transport = memo(function Transport({
   );
 });
 
+/** Label pill "class · elapsed/total s" for each event active at the playhead. */
+function VideoPill({
+  store,
+  event,
+  stack,
+}: {
+  store: PlayerStore;
+  event: DetectedEvent;
+  stack: number;
+}) {
+  const [start, end, label] = event;
+  const color = EVENT_CLASS_COLORS[label];
+  const textRef = useRef<HTMLSpanElement>(null);
+  const total = end - start;
+  useTimeEffect(store, (t) => {
+    if (textRef.current) {
+      textRef.current.textContent = `${Math.min(total, Math.max(0, t - start)).toFixed(1)}/${total.toFixed(1)} s`;
+    }
+  });
+  return (
+    <div
+      className="pointer-events-none absolute left-3 z-10 flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-[rgba(1,9,9,0.88)] px-2.5 py-1 font-mono text-[10px] text-white backdrop-blur sm:text-[11px]"
+      style={{ borderColor: color, bottom: `${12 + stack * 30}px` }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} aria-hidden />
+      <span style={{ color }}>{label}</span>
+      <span className="text-muted-foreground">·</span>
+      <span ref={textRef} />
+    </div>
+  );
+}
+
+function VideoPills({ store, events }: { store: PlayerStore; events: DetectedEvent[] }) {
+  const select = useCallback((t: number) => activeKey(events, t), [events]);
+  const key = useTimeSelector(store, select);
+  const active = key ? key.split(",").map(Number) : [];
+  return (
+    <>
+      {active.map((i, n) => (
+        <VideoPill key={i} store={store} event={events[i]!} stack={n} />
+      ))}
+    </>
+  );
+}
+
 /** The video element, driven by the shared clock. */
 function VideoSurface({ store, src }: { store: PlayerStore; src: string }) {
   return (
@@ -217,14 +268,12 @@ export const Monitor = memo(function Monitor({
   title,
   note,
   src,
-  seed,
 }: {
   store: PlayerStore;
   model: Model;
   title: string;
   note?: string | undefined;
   src?: string | undefined;
-  seed: number;
 }) {
   const { playing } = usePlayerControls(store);
   return (
@@ -256,13 +305,11 @@ export const Monitor = memo(function Monitor({
       </div>
 
       <div className="relative aspect-[1000/560] w-full bg-[#020e0e]">
-        {src ? (
+        {src && (
           <>
             <VideoSurface store={store} src={src} />
-            <PillLayer store={store} events={model.events} anchored={false} />
+            <VideoPills store={store} events={model.events} />
           </>
-        ) : (
-          <SceneView store={store} events={model.events} seed={seed} />
         )}
         {note && (
           <div className="pointer-events-none absolute bottom-2 right-2 max-w-[70%] lg:hidden truncate rounded-full border border-border bg-background/80 px-2.5 py-0.5 font-mono text-[9px] tracking-wider text-muted-foreground backdrop-blur sm:text-[10px]">

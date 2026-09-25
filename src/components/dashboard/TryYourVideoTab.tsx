@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Download, RefreshCw, UploadCloud, X } from "lucide-react";
 import { ControlRoom } from "@/components/control-room/ControlRoom";
-import { hashString } from "@/components/scene/geometry";
 import { API_BASE, UPLOAD_LIMITS, USE_MOCK } from "@/config";
 import { buildMockResult } from "@/lib/mock-analysis";
 import { cn } from "@/lib/utils";
@@ -294,7 +293,6 @@ export function TryYourVideoTab({ onExploreSamples }: { onExploreSamples: () => 
           result={result}
           title={`UPLOAD · ${fileName}`}
           src={result.annotated_video_url ?? objectUrl ?? undefined}
-          seed={hashString(fileName)}
         />
       </div>
     );

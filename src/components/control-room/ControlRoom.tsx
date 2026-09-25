@@ -22,14 +22,12 @@ export function ControlRoom({
   title,
   note,
   src,
-  seed,
   feeds,
 }: {
   result: AnalysisResult;
   title: string;
   note?: string | undefined;
   src?: string | undefined;
-  seed: number;
   feeds?: ReactNode;
 }) {
   const model = useMemo(() => buildModel(result), [result]);
@@ -48,7 +46,7 @@ export function ControlRoom({
 
       <div className="contents xl:flex xl:min-w-0 xl:flex-col xl:gap-5">
         <div className="order-2 min-w-0">
-          <Monitor store={store} model={model} title={title} note={note} src={src} seed={seed} />
+          <Monitor store={store} model={model} title={title} note={note} src={src} />
         </div>
         <div className="order-5 min-w-0">
           <Timeline store={store} model={model} />

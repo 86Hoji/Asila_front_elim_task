@@ -4,7 +4,7 @@ import { EVENT_CLASS_COLORS, formatTime } from "@/lib/event-classes";
 import { cn } from "@/lib/utils";
 import type { DetectedEvent } from "@/types";
 import { riskAt, riskPath, type Model } from "./analysis";
-import { useTimeEffect, type PlayerStore } from "./player-store";
+import { STILL_STORE, useTimeEffect, type PlayerStore } from "./player-store";
 
 const LABEL_W = "w-[92px] sm:w-[120px]";
 const RISK_H = 64;
@@ -104,7 +104,13 @@ const RiskLane = memo(function RiskLane({ model }: { model: Model }) {
   );
 });
 
-const ClassLanes = memo(function ClassLanes({ model }: { model: Model }) {
+const ClassLanes = memo(function ClassLanes({
+  model,
+  selected,
+}: {
+  model: Model;
+  selected: number | null;
+}) {
   const d = model.duration || 1;
   return (
     <div>
@@ -116,7 +122,10 @@ const ClassLanes = memo(function ClassLanes({ model }: { model: Model }) {
               <span
                 key={i}
                 data-ev={i}
-                className="absolute top-1/2 h-[14px] -translate-y-1/2 rounded-full transition-[filter] hover:brightness-125"
+                className={cn(
+                  "absolute top-1/2 h-[14px] -translate-y-1/2 cursor-pointer rounded-full transition-[filter] hover:brightness-125",
+                  selected === i && "ring-2 ring-white ring-offset-1 ring-offset-background",
+                )}
                 style={{
                   left: `${(e[0] / d) * 100}%`,
                   width: `max(5px, ${((e[1] - e[0]) / d) * 100}%)`,
@@ -181,12 +190,20 @@ function Tooltip({ apiRef }: { apiRef: React.MutableRefObject<TipApi | null> }) 
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * With a `store`: playhead, click to seek, drag to scrub, auto-follow.
+ * Without one (report mode): no playhead; clicking an event calls `onEventClick`.
+ */
 export const Timeline = memo(function Timeline({
   store,
   model,
+  onEventClick,
+  selected = null,
 }: {
-  store: PlayerStore;
+  store?: PlayerStore | undefined;
   model: Model;
+  onEventClick?: ((index: number) => void) | undefined;
+  selected?: number | null;
 }) {
   const duration = model.duration || 1;
   const [span, setSpanState] = useState(duration);
@@ -220,12 +237,14 @@ export const Timeline = memo(function Timeline({
   const zoom = (next: number) => {
     const s = Math.min(duration, next);
     setSpanState(s);
-    view.setSpan(s, store.getTime());
+    const sel = selected !== null ? model.events[selected] : undefined;
+    view.setSpan(s, store ? store.getTime() : sel ? sel[0] : view.start + view.span / 2);
     applyView();
   };
 
   // Playheads + auto-follow: imperative, once per clock change.
-  useTimeEffect(store, (t) => {
+  useTimeEffect(store ?? STILL_STORE, (t) => {
+    if (!store) return;
     const pct = `${(t / duration) * 100}%`;
     if (playheadRef.current) playheadRef.current.style.transform = `translateX(${pct})`;
     if (ovHeadRef.current) ovHeadRef.current.style.transform = `translateX(${pct})`;
@@ -242,14 +261,20 @@ export const Timeline = memo(function Timeline({
   };
   const drag = useRef<{ x: number; moved: boolean } | null>(null);
 
-  const eventAt = (target: EventTarget | null): DetectedEvent | null => {
+  const indexAt = (target: EventTarget | null) => {
     const el = (target as HTMLElement | null)?.closest?.("[data-ev]");
-    if (!el) return null;
-    return model.events[Number(el.getAttribute("data-ev"))] ?? null;
+    return el ? Number(el.getAttribute("data-ev")) : -1;
   };
+  const eventAt = (target: EventTarget | null): DetectedEvent | null =>
+    model.events[indexAt(target)] ?? null;
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    if (!store) {
+      const i = indexAt(e.target);
+      if (i >= 0) onEventClick?.(i);
+      return;
+    }
     viewportRef.current?.setPointerCapture(e.pointerId);
     drag.current = { x: e.clientX, moved: false };
     const ev = eventAt(e.target);
@@ -260,7 +285,7 @@ export const Timeline = memo(function Timeline({
     const t = timeAtX(e.clientX);
     if (drag.current) {
       if (Math.abs(e.clientX - drag.current.x) > 3) drag.current.moved = true;
-      if (drag.current.moved) store.seek(t);
+      if (drag.current.moved) store?.seek(t);
     }
     const ev = drag.current ? null : eventAt(e.target);
     const text = ev
@@ -349,17 +374,20 @@ export const Timeline = memo(function Timeline({
           <Tooltip apiRef={tipRef} />
           <div
             ref={viewportRef}
-            className="relative cursor-crosshair touch-pan-y overflow-hidden rounded-lg bg-[rgba(0,194,188,0.03)]"
+            className={cn(
+              "relative touch-pan-y overflow-hidden rounded-lg bg-[rgba(0,194,188,0.03)]",
+              store && "cursor-crosshair",
+            )}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
             onPointerLeave={() => tipRef.current?.hide()}
-            role="slider"
-            aria-label="Timeline: click to seek, drag to scrub"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration)}
-            tabIndex={-1}
+            aria-label={
+              store
+                ? "Timeline: click to seek, drag to scrub"
+                : "Timeline: click an event to select it"
+            }
           >
             <div
               ref={innerRef}
@@ -367,17 +395,19 @@ export const Timeline = memo(function Timeline({
               style={{ width: "100%" }}
             >
               <RiskLane model={model} />
-              <ClassLanes model={model} />
+              <ClassLanes model={model} selected={selected} />
               <Axis duration={duration} span={span} />
-              <div
-                ref={playheadRef}
-                className="pointer-events-none absolute left-0 top-0 w-full will-change-transform"
-                style={{ height: lanesHeight }}
-                aria-hidden
-              >
-                <div className="h-full w-px bg-teal shadow-[0_0_8px_rgba(0,255,235,0.8)]" />
-                <div className="absolute -left-[4px] -top-[2px] h-[9px] w-[9px] rotate-45 bg-teal" />
-              </div>
+              {store && (
+                <div
+                  ref={playheadRef}
+                  className="pointer-events-none absolute left-0 top-0 w-full will-change-transform"
+                  style={{ height: lanesHeight }}
+                  aria-hidden
+                >
+                  <div className="h-full w-px bg-teal shadow-[0_0_8px_rgba(0,255,235,0.8)]" />
+                  <div className="absolute -left-[4px] -top-[2px] h-[9px] w-[9px] rotate-45 bg-teal" />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -413,9 +443,11 @@ export const Timeline = memo(function Timeline({
               aria-hidden
             />
           ))}
-          <div ref={ovHeadRef} className="pointer-events-none absolute inset-0" aria-hidden>
-            <div className="h-full w-px bg-teal" />
-          </div>
+          {store && (
+            <div ref={ovHeadRef} className="pointer-events-none absolute inset-0" aria-hidden>
+              <div className="h-full w-px bg-teal" />
+            </div>
+          )}
           <div
             ref={windowRef}
             className={cn(
