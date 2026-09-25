@@ -69,3 +69,25 @@ export const UPLOAD_LIMITS = {
 };
 
 export const RISK_THRESHOLD = 0.5;
+
+/** Facts from our exploratory analysis of the sample footage (shown on the landing page). */
+export const EDA = {
+  videoCount: 4,
+  resolution: "4K",
+  fps: 29.97,
+  codec: "H.264 10-bit 4:2:2",
+  timeBudget: 3,
+  cameraDriftPct: 3,
+  signalCycle: {
+    totalSec: 75,
+    flashingGreenSec: 3,
+    yellowSec: 3,
+  },
+  /** Vehicles crossing the stop line per minute, by signal phase: [min, max]. */
+  stopLineCrossingsPerMin: {
+    red: [0, 4] as [number, number],
+    green: [50, 66] as [number, number],
+  },
+  falseAlarmsBefore: [66, 113] as [number, number],
+  falseAlarmsAfter: 1,
+};

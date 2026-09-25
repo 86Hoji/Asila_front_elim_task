@@ -18,16 +18,9 @@ import {
   EVENT_CLASS_DEFINITIONS,
   EVENT_CLASS_LABELS,
 } from "@/lib/event-classes";
-import type { EventClass } from "@/types";
+import { SAMPLE_STATS } from "@/data/stats";
 
-const COUNTS: Array<{ label: EventClass; count: number }> = [
-  { label: "failure_to_yield", count: 10 },
-  { label: "stop_line", count: 5 },
-  { label: "jaywalking", count: 3 },
-  { label: "red_light", count: 2 },
-  { label: "stopped_vehicle", count: 1 },
-  { label: "wrong_way", count: 1 },
-];
+const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({ label, count }));
 
 const FAILURES = [
   {
@@ -57,7 +50,7 @@ export function Results() {
       </Reveal>
       <Reveal delay={0.06}>
         <h2 className="mt-5 max-w-3xl text-3xl font-bold md:text-5xl">
-          22 events across 18 minutes of footage.
+          {SAMPLE_STATS.eventCount} events across {SAMPLE_STATS.totalMinutes} minutes of footage.
         </h2>
       </Reveal>
 
@@ -114,7 +107,10 @@ export function Results() {
                   style={{ background: EVENT_CLASS_COLORS[c.label] }}
                   aria-hidden
                 />
-                <span className="font-mono text-xs tracking-wider" style={{ color: EVENT_CLASS_COLORS[c.label] }}>
+                <span
+                  className="font-mono text-xs tracking-wider"
+                  style={{ color: EVENT_CLASS_COLORS[c.label] }}
+                >
                   {c.label}
                 </span>
               </div>
@@ -127,10 +123,12 @@ export function Results() {
                     "repeating-linear-gradient(135deg, rgba(0,194,188,0.05) 0 12px, transparent 12px 24px)",
                 }}
               >
-                <span className="font-mono text-[11px] text-muted-foreground">[TODO: example clip]</span>
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  [TODO: example clip]
+                </span>
               </div>
               <p className="mt-4 font-mono text-xs text-muted-foreground">
-                {c.count} detected in 18 min
+                {c.count} detected in {SAMPLE_STATS.totalMinutes} min
               </p>
             </article>
           </Reveal>
@@ -146,7 +144,10 @@ export function Results() {
       <div className="mt-8 grid gap-5 md:grid-cols-3">
         {FAILURES.map((f, i) => (
           <Reveal key={i} delay={0.04 * i}>
-            <article className="glass hover-lift h-full border-l-2 p-6" style={{ borderLeftColor: "#ff8c42" }}>
+            <article
+              className="glass hover-lift h-full border-l-2 p-6"
+              style={{ borderLeftColor: "#ff8c42" }}
+            >
               <h4 className="text-base font-semibold">{f.title}</h4>
               <p className="mt-3 text-sm text-[var(--body)]">{f.body}</p>
             </article>

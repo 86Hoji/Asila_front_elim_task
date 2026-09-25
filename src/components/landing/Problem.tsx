@@ -41,10 +41,7 @@ export function Problem() {
         {PARTS.map((p, i) => (
           <Reveal key={p.tag} delay={0.1 + i * 0.08}>
             <article className="glass hover-lift h-full p-8 md:p-10">
-              <span
-                className="mono-label"
-                style={{ color: p.accent }}
-              >
+              <span className="mono-label" style={{ color: p.accent }}>
                 {p.tag}
               </span>
               <h3 className="mt-4 text-2xl font-semibold md:text-3xl">{p.title}</h3>

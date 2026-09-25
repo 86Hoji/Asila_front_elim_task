@@ -21,8 +21,7 @@ export function HeroCanvas() {
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const lowPower =
-      (navigator.hardwareConcurrency ?? 8) <= 4 || window.innerWidth < 640;
+    const lowPower = (navigator.hardwareConcurrency ?? 8) <= 4 || window.innerWidth < 640;
     if (reduced || lowPower) return;
     const id = window.setTimeout(() => setEnabled(true), 250);
     return () => window.clearTimeout(id);

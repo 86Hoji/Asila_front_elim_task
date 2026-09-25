@@ -10,8 +10,9 @@ export function Reveal({
   delay?: number;
   className?: string;
 }) {
+  // Same markup on server and client (no hydration mismatch); reduced motion just
+  // makes the reveal instant.
   const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
 
   return (
     <motion.div
@@ -19,7 +20,7 @@ export function Reveal({
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={reduced ? { duration: 0 } : { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>

@@ -15,10 +15,10 @@ export function MediaPanel({
   note,
 }: {
   mode: "video" | "schematic";
-  src?: string;
+  src?: string | undefined;
   events: DetectedEvent[];
   player: Player;
-  note?: string;
+  note?: string | undefined;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 

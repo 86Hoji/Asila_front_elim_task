@@ -1,16 +1,18 @@
-import { lazy, Suspense } from "react";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
+import { SceneMapFigure, VelocityFieldFigure } from "@/components/scene/SceneFigures";
+import { EDA } from "@/config";
+import { StopLineChart } from "./StopLineChart";
+import { FEEDS, SAMPLE_STATS } from "@/data/stats";
+import { cn } from "@/lib/utils";
 
-const EdaCharts = lazy(() => import("./EdaCharts"));
-
-const LIGHTING = [
-  { label: "noon", color: "#ffe9a8" },
-  { label: "noon", color: "#ffdf8f" },
-  { label: "evening", color: "#ff9d6e" },
-  { label: "dusk", color: "#6a7bd1" },
-];
+const LIGHTING_SWATCH: Record<string, string> = {
+  noon: "#ffe9a8",
+  evening: "#ff9d6e",
+  dusk: "#6a7bd1",
+  night: "#1d2a5c",
+};
 
 function Card({
   title,
@@ -22,7 +24,7 @@ function Card({
   className?: string;
 }) {
   return (
-    <article className={`glass hover-lift flex h-full flex-col p-6 ${className ?? ""}`}>
+    <article className={cn("glass hover-lift flex h-full min-w-0 flex-col p-6", className)}>
       <h3 className="mono-label text-teal-mid">{title}</h3>
       <div className="mt-4 flex-1">{children}</div>
     </article>
@@ -30,60 +32,48 @@ function Card({
 }
 
 function CycleBar() {
+  const { totalSec, flashingGreenSec, yellowSec } = EDA.signalCycle;
+  const half = (totalSec - flashingGreenSec - yellowSec) / 2;
   const phases = [
-    { label: "pedestrian red", width: 46, color: "rgba(255,59,59,0.45)" },
-    { label: "flashing green", width: 4, color: "rgba(6,214,160,0.55)" },
-    { label: "yellow", width: 4, color: "rgba(255,210,63,0.6)" },
-    { label: "green", width: 46, color: "rgba(0,255,235,0.35)" },
+    { label: "vehicle green", sec: half, color: "rgba(0,255,235,0.35)" },
+    { label: "flashing green", sec: flashingGreenSec, color: "rgba(6,214,160,0.7)" },
+    { label: "yellow", sec: yellowSec, color: "rgba(255,210,63,0.7)" },
+    { label: "vehicle red", sec: half, color: "rgba(255,59,59,0.45)" },
   ];
   return (
     <div>
       <div className="flex h-9 w-full overflow-hidden rounded-full border border-border">
-        {phases.map((p, i) => (
+        {phases.map((p) => (
           <div
-            key={i}
-            className="relative h-full"
-            style={{ width: `${p.width}%`, background: p.color }}
+            key={p.label}
+            className="h-full"
+            style={{ width: `${(p.sec / totalSec) * 100}%`, background: p.color }}
             title={p.label}
           />
         ))}
       </div>
-      <div className="relative mt-2 h-1 overflow-hidden rounded-full bg-[var(--teal-dim)]">
-        <div
-          className="absolute inset-y-0 w-1/5 rounded-full bg-teal"
-          style={{ animation: "flow-dash 0s", animationName: "none" }}
-        />
-      </div>
       <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] text-muted-foreground">
-        <li>~75 s full cycle</li>
-        <li>3 s flashing green</li>
-        <li>3 s yellow</li>
+        <li>~{totalSec} s full cycle</li>
+        <li>{flashingGreenSec} s flashing green</li>
+        <li>{yellowSec} s yellow</li>
         <li>then vehicle red</li>
       </ul>
     </div>
   );
 }
 
-function FigurePlaceholder({ caption }: { caption: string }) {
+function Figure({ children, caption }: { children: React.ReactNode; caption: string }) {
   return (
-    <div className="flex h-full flex-col">
-      <div
-        className="relative flex min-h-[200px] flex-1 items-center justify-center overflow-hidden rounded-xl border border-border"
-        style={{
-          background:
-            "repeating-linear-gradient(135deg, rgba(0,194,188,0.05) 0 12px, transparent 12px 24px), rgba(0,45,42,0.35)",
-        }}
-      >
-        <span className="font-mono text-xs tracking-widest text-muted-foreground">
-          [TODO: figure]
-        </span>
-      </div>
-      <p className="mt-3 text-sm text-[var(--body)]">{caption}</p>
-    </div>
+    <figure className="flex h-full flex-col">
+      <div className="overflow-hidden rounded-xl border border-border">{children}</div>
+      <figcaption className="mt-3 text-sm text-[var(--body)]">{caption}</figcaption>
+    </figure>
   );
 }
 
 export function DataSection() {
+  const minutes = SAMPLE_STATS.totalMinutes;
+
   return (
     <Section id="data">
       <Reveal>
@@ -95,12 +85,13 @@ export function DataSection() {
         </h2>
       </Reveal>
 
-      <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-14 grid gap-5 md:grid-flow-dense md:grid-cols-2 lg:grid-cols-3">
         <Reveal delay={0.04}>
           <Card title="THE FOOTAGE">
-            <p className="text-2xl font-semibold text-foreground">18 minutes</p>
+            <p className="text-2xl font-semibold text-foreground">{minutes} minutes</p>
             <p className="mt-2 text-sm text-[var(--body)]">
-              4 sample videos, 4K at 29.97 fps, H.264 10-bit 4:2:2 — CPU-only decoding.
+              {SAMPLE_STATS.feedCount} sample videos, {EDA.resolution} at {EDA.fps} fps, {EDA.codec}{" "}
+              — CPU-only decoding.
             </p>
           </Card>
         </Reveal>
@@ -108,14 +99,14 @@ export function DataSection() {
         <Reveal delay={0.08}>
           <Card title="LIGHTING">
             <div className="grid grid-cols-4 gap-3">
-              {LIGHTING.map((l, i) => (
-                <div key={i}>
+              {FEEDS.map((f) => (
+                <div key={f.id} className="min-w-0">
                   <div
                     className="h-14 w-full rounded-lg border border-border"
-                    style={{ background: l.color, opacity: 0.8 }}
+                    style={{ background: LIGHTING_SWATCH[f.lighting] ?? "#2a3b3b", opacity: 0.8 }}
                   />
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {l.label}
+                  <p className="mt-2 truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {f.lighting}
                   </p>
                 </div>
               ))}
@@ -123,38 +114,53 @@ export function DataSection() {
           </Card>
         </Reveal>
 
-        <Reveal delay={0.12}>
-          <Card title="CAMERA DRIFT">
-            <p className="text-2xl font-semibold text-foreground">up to 3%</p>
-            <p className="mt-2 text-sm text-[var(--body)]">
-              The camera shifts up to 3% of frame width between recordings, so the scene map is
-              re-aligned per video.
-            </p>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.04} className="lg:col-span-2">
+        <Reveal delay={0.12} className="md:col-span-2 lg:col-span-1">
           <Card title="SIGNAL CYCLE">
             <CycleBar />
           </Card>
         </Reveal>
 
-        <Suspense
-          fallback={
-            <div className="glass min-h-[260px] animate-pulse" aria-hidden />
-          }
-        >
-          <EdaCharts />
-        </Suspense>
-
-        <Reveal delay={0.08}>
+        <Reveal delay={0.04} className="md:col-span-2 lg:row-span-2">
           <Card title="SCENE MAP">
-            <FigurePlaceholder caption="Lanes, stop line and crossing polygons registered onto the camera view." />
+            <Figure caption="Our own drawing of the junction: lanes and their directions, the stop line, three crossings, the junction area and refuge islands — the zones every rule reasons about.">
+              <SceneMapFigure />
+            </Figure>
           </Card>
         </Reveal>
-        <Reveal delay={0.12} className="lg:col-span-2">
+
+        <Reveal delay={0.08}>
+          <Card title="STOP-LINE CROSSINGS PER MINUTE">
+            <StopLineChart />
+          </Card>
+        </Reveal>
+
+        <Reveal delay={0.12}>
+          <Card title="CAMERA DRIFT">
+            <p className="text-2xl font-semibold text-foreground">up to {EDA.cameraDriftPct}%</p>
+            <p className="mt-2 text-sm text-[var(--body)]">
+              The camera shifts up to {EDA.cameraDriftPct}% of frame width between recordings, so
+              the scene map is re-aligned per video.
+            </p>
+          </Card>
+        </Reveal>
+
+        <Reveal delay={0.04} className="md:col-span-2 lg:col-span-3">
           <Card title="MEAN VELOCITY FIELD">
-            <FigurePlaceholder caption="Average track velocity per cell, used to learn the legal direction of every lane." />
+            <div className="grid items-center gap-6 lg:grid-cols-[2fr_1fr]">
+              <div className="overflow-hidden rounded-xl border border-border">
+                <VelocityFieldFigure />
+              </div>
+              <div className="space-y-3 text-sm text-[var(--body)]">
+                <p>
+                  Averaging the velocity of every track per grid cell gives the direction traffic
+                  actually takes in each lane. That is how the legal direction of every lane is
+                  learned.
+                </p>
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  Schematic drawing · arrows coloured by heading (see the wheel)
+                </p>
+              </div>
+            </div>
           </Card>
         </Reveal>
       </div>

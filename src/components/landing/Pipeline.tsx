@@ -3,82 +3,238 @@ import { ChevronRight } from "lucide-react";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { EDA } from "@/config";
+import { SAMPLE_STATS } from "@/data/stats";
+import { cn } from "@/lib/utils";
+
+type Kind = "LEARNED" | "RULE-BASED" | "INPUT" | "OUTPUT";
 
 type Node = {
   id: string;
   title: string;
-  kind: "LEARNED" | "RULE-BASED";
+  kind: Kind;
   note: string;
   detail: string;
 };
 
+const [faBefore0, faBefore1] = EDA.falseAlarmsBefore;
+
 const MAIN: Node[] = [
-  { id: "video", title: "Video", kind: "RULE-BASED", note: "4K · H.264", detail: "[TODO] Describe the input footage handling: 10-bit 4:2:2 decoding on CPU, colour conversion and the frame cache we keep in memory." },
-  { id: "sampling", title: "Frame sampling", kind: "RULE-BASED", note: "adaptive stride", detail: "[TODO] Explain the sampling stride, how we keep it within the 3× real-time budget, and how skipped frames are interpolated for tracking." },
-  { id: "detect", title: "YOLO11s detection", kind: "LEARNED", note: "vehicles · people", detail: "[TODO] Describe the detector, its training data and the confidence thresholds used per class." },
-  { id: "track", title: "ByteTrack tracking", kind: "RULE-BASED", note: "stable IDs", detail: "[TODO] Describe association, ID persistence through occlusion, and how short tracks are discarded." },
-  { id: "scene", title: "Scene alignment", kind: "RULE-BASED", note: "lanes · stop line · crossings", detail: "[TODO] Explain the per-video scene map: how lanes, the stop line and zebra crossings are registered and re-aligned against camera drift." },
-  { id: "phase", title: "Traffic-light phase reader", kind: "LEARNED", note: "red · green · yellow", detail: "[TODO] Explain how the signal head is cropped and classified per frame, and how the phase timeline is smoothed." },
-  { id: "rules", title: "Rule engine", kind: "RULE-BASED", note: "9 classes", detail: "[TODO] Explain how geometry, phase and track state combine into event segments, and how overlapping detections are merged." },
-  { id: "events", title: "Event segments", kind: "RULE-BASED", note: "[start, end, label]", detail: "[TODO] Describe the output format, the post-processing that merges adjacent segments and the confidence filter." },
+  {
+    id: "video",
+    title: "Video",
+    kind: "INPUT",
+    note: `${EDA.resolution} · H.264 · ${EDA.fps} fps`,
+    detail: `${EDA.resolution} H.264, 10-bit 4:2:2 at ${EDA.fps} fps. This profile is decoded on the CPU, so decoding cost drives the time budget.`,
+  },
+  {
+    id: "sampling",
+    title: "Frame sampling",
+    kind: "RULE-BASED",
+    note: "fixed stride",
+    detail: `A fixed frame stride derived from the video metadata keeps runs deterministic; a watchdog only steps in if a video risks exceeding the ${EDA.timeBudget}x time budget.`,
+  },
+  {
+    id: "detect",
+    title: "YOLO11s detection",
+    kind: "LEARNED",
+    note: "vehicles · pedestrians",
+    detail:
+      "Open-weights YOLO11s detects vehicles and pedestrians. Without a GPU the pipeline falls back to YOLO11n on every 6th frame.",
+  },
+  {
+    id: "track",
+    title: "ByteTrack tracking",
+    kind: "RULE-BASED",
+    note: "persistent tracks",
+    detail:
+      "Links detections into persistent tracks, so every rule reasons about trajectories, not single frames. Tracks are cached, so re-runs are near-instant.",
+  },
+  {
+    id: "scene",
+    title: "Scene alignment",
+    kind: "RULE-BASED",
+    note: "lanes · stop line · crossings",
+    detail: `Lanes with their legal directions, the stop line, zebra crossings and the junction area are mapped once and re-aligned to every video, because the camera drifts up to ${EDA.cameraDriftPct}% of the frame width between recordings.`,
+  },
+  {
+    id: "phase",
+    title: "Traffic-light phase reader",
+    kind: "RULE-BASED",
+    note: "signal state from pixels",
+    detail:
+      "Reads the signal state directly from the pixels of the signal heads, with no training; works in noon sun and at dusk.",
+  },
+  {
+    id: "rules",
+    title: "Rule engine",
+    kind: "RULE-BASED",
+    note: "9 classes",
+    detail:
+      "Nine classes come from rules over trajectories, scene geometry and signal phase: stopped_vehicle, congestion, wrong_way, jaywalking, red_light, stop_line, failure_to_yield, accident, near_miss. Five classes are deliberately not predicted: under macro F1 a predicted class that is absent from the test set scores zero.",
+  },
+  {
+    id: "events",
+    title: "Event segments",
+    kind: "OUTPUT",
+    note: "[start, end, label]",
+    detail:
+      "Post-processing merges fragments and drops sub-second blips; boundaries follow the start/end convention of each class.",
+  },
 ];
 
 const BRANCH: Node[] = [
-  { id: "plane", title: "Road-plane projection", kind: "RULE-BASED", note: "homography", detail: "[TODO] Explain the homography that maps image pixels to metric road coordinates." },
-  { id: "ttc", title: "Time-to-collision", kind: "RULE-BASED", note: "pairwise", detail: "[TODO] Explain how pairwise TTC is computed from projected velocities and how close calls are ranked." },
-  { id: "risk", title: "Causal risk score", kind: "LEARNED", note: "Part B", detail: "[TODO] Explain the causal scoring head: inputs, window length and why it never looks at future frames." },
+  {
+    id: "plane",
+    title: "Road-plane projection",
+    kind: "RULE-BASED",
+    note: "homography",
+    detail:
+      "A homography maps image coordinates onto the road plane, so speeds and distances are comparable across the frame.",
+  },
+  {
+    id: "ttc",
+    title: "Time-to-collision",
+    kind: "RULE-BASED",
+    note: "pairwise",
+    detail:
+      "For every pair of nearby road users, time-to-collision is computed from their positions and velocities on the road plane.",
+  },
+  {
+    id: "risk",
+    title: "Causal risk score",
+    kind: "RULE-BASED",
+    note: "Part B · past frames only",
+    detail: `Risk rises as the minimum time-to-collision drops, using only frames already seen. Tuning cut false alarms from ${faBefore0}-${faBefore1} to ${EDA.falseAlarmsAfter} across ${SAMPLE_STATS.totalMinutes} minutes of footage.`,
+  },
 ];
 
-function Badge({ kind }: { kind: Node["kind"] }) {
-  const learned = kind === "LEARNED";
+const BADGE_STYLE: Record<Kind, { color: string; background: string }> = {
+  LEARNED: { color: "var(--teal)", background: "rgba(0,194,188,0.12)" },
+  "RULE-BASED": { color: "var(--lavender)", background: "rgba(199,125,255,0.12)" },
+  INPUT: { color: "#c2d3d2", background: "rgba(194,211,210,0.1)" },
+  OUTPUT: { color: "#c2d3d2", background: "rgba(194,211,210,0.1)" },
+};
+
+function Badge({ kind }: { kind: Kind }) {
   return (
     <span
-      className="mono-label rounded-full px-2 py-0.5 text-[10px]"
-      style={{
-        color: learned ? "var(--teal)" : "var(--lavender)",
-        background: learned ? "rgba(0,194,188,0.12)" : "rgba(199,125,255,0.12)",
-      }}
+      className="mono-label inline-block rounded-full px-2 py-0.5 text-[10px]"
+      style={BADGE_STYLE[kind]}
     >
       {kind}
     </span>
   );
 }
 
-function NodeCard({ node, onClick }: { node: Node; onClick: () => void }) {
+function NodeCard({ node, index, onClick }: { node: Node; index: number; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="glass hover-lift group w-full min-w-[190px] max-w-[240px] shrink-0 p-5 text-left"
+      className="glass hover-lift group relative flex h-full w-full min-w-0 flex-col p-5 text-left"
     >
-      <Badge kind={node.kind} />
+      <div className="flex items-center justify-between gap-2">
+        <Badge kind={node.kind} />
+        <span className="font-mono text-[10px] text-muted-foreground">
+          {String(index).padStart(2, "0")}
+        </span>
+      </div>
       <h3 className="mt-3 text-base font-semibold leading-snug">{node.title}</h3>
       <p className="mt-1 font-mono text-[11px] text-muted-foreground">{node.note}</p>
-      <span className="mt-4 inline-flex items-center gap-1 text-xs text-teal-mid opacity-0 transition-opacity group-hover:opacity-100">
+      <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs text-teal-mid transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100">
         Details <ChevronRight className="h-3 w-3" />
       </span>
     </button>
   );
 }
 
-function Connector() {
+/** Animated connector line. `dir` is where the flow goes. */
+function Flow({ dir, className }: { dir: "right" | "left" | "down"; className?: string }) {
+  const vertical = dir === "down";
+  const len = 40;
+  const x2 = vertical ? 1 : len;
+  const y2 = vertical ? len : 1;
   return (
-    <div className="hidden h-px w-10 shrink-0 self-center lg:block" aria-hidden>
-      <svg width="40" height="2" className="overflow-visible">
-        <line x1="0" y1="1" x2="40" y2="1" stroke="rgba(0,194,188,0.3)" strokeWidth="1" />
-        <line
-          x1="0"
-          y1="1"
-          x2="40"
-          y2="1"
-          stroke="var(--teal)"
-          strokeWidth="1.5"
-          strokeDasharray="8 32"
-          style={{ animation: "flow-dash 3s linear infinite" }}
-        />
-      </svg>
+    <svg
+      width={vertical ? 2 : len}
+      height={vertical ? len : 2}
+      className={cn("overflow-visible", className)}
+      style={dir === "left" ? { transform: "scaleX(-1)" } : undefined}
+      aria-hidden
+    >
+      <line x1="1" y1="1" x2={x2} y2={y2} stroke="rgba(0,194,188,0.3)" strokeWidth="1" />
+      <line
+        x1="1"
+        y1="1"
+        x2={x2}
+        y2={y2}
+        stroke="var(--teal)"
+        strokeWidth="1.5"
+        strokeDasharray="8 32"
+        style={{ animation: "flow-dash 3s linear infinite" }}
+      />
+    </svg>
+  );
+}
+
+/**
+ * Desktop: a 4-column snake. Row 1 runs left to right, the flow drops down on the
+ * right, row 2 runs right to left. Grid positions are explicit so DOM order stays
+ * the logical pipeline order for screen readers.
+ */
+const SNAKE_POS = [
+  "lg:col-start-1 lg:row-start-1",
+  "lg:col-start-2 lg:row-start-1",
+  "lg:col-start-3 lg:row-start-1",
+  "lg:col-start-4 lg:row-start-1",
+  "lg:col-start-4 lg:row-start-2",
+  "lg:col-start-3 lg:row-start-2",
+  "lg:col-start-2 lg:row-start-2",
+  "lg:col-start-1 lg:row-start-2",
+];
+
+function DesktopSnake({ onOpen }: { onOpen: (n: Node) => void }) {
+  return (
+    <div className="hidden lg:grid lg:grid-cols-4 lg:gap-x-10 lg:gap-y-10">
+      {MAIN.map((node, i) => (
+        <div key={node.id} className={cn("relative", SNAKE_POS[i])}>
+          <NodeCard node={node} index={i + 1} onClick={() => onOpen(node)} />
+          {i < 3 && <Flow dir="right" className="absolute -right-10 top-1/2" />}
+          {i === 3 && <Flow dir="down" className="absolute -bottom-10 left-1/2" />}
+          {i >= 4 && i < 7 && <Flow dir="left" className="absolute -left-10 top-1/2" />}
+        </div>
+      ))}
     </div>
+  );
+}
+
+function MobileStepper({ nodes, onOpen }: { nodes: Node[]; onOpen: (n: Node) => void }) {
+  return (
+    <ol className="relative space-y-3 pl-7 lg:hidden">
+      <span
+        className="absolute bottom-6 left-[9px] top-6 w-px bg-[rgba(0,194,188,0.3)]"
+        aria-hidden
+      />
+      {nodes.map((node, i) => (
+        <li key={node.id} className="relative">
+          <span
+            className="absolute -left-7 top-6 flex h-[19px] w-[19px] items-center justify-center rounded-full border border-teal-mid bg-background"
+            aria-hidden
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+          </span>
+          <NodeCard node={node} index={i + 1} onClick={() => onOpen(node)} />
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -95,32 +251,39 @@ export function Pipeline() {
           One pass over the frames, two answers out.
         </h2>
       </Reveal>
+      <Reveal delay={0.08}>
+        <div className="mt-6 flex flex-wrap gap-3 font-mono text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-2">
+            <Badge kind="LEARNED" /> trained model
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Badge kind="RULE-BASED" /> geometry and rules, no training
+          </span>
+        </div>
+      </Reveal>
 
       <Reveal delay={0.12}>
-        <div className="scrollbar-thin-teal mt-14 overflow-x-auto pb-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0">
-            {MAIN.map((node, i) => (
-              <div key={node.id} className="flex flex-col lg:flex-row">
-                <NodeCard node={node} onClick={() => setActive(node)} />
-                {i < MAIN.length - 1 && <Connector />}
-              </div>
-            ))}
-          </div>
+        <div className="mt-12">
+          <DesktopSnake onOpen={setActive} />
+          <MobileStepper nodes={MAIN} onOpen={setActive} />
         </div>
       </Reveal>
 
       <Reveal delay={0.16}>
-        <div className="mt-10">
+        <div className="mt-14">
           <p className="mono-label">BRANCH FROM TRACKING // ACCIDENT ANTICIPATION</p>
-          <div className="scrollbar-thin-teal mt-4 overflow-x-auto pb-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:gap-0">
-              {BRANCH.map((node, i) => (
-                <div key={node.id} className="flex flex-col lg:flex-row">
-                  <NodeCard node={node} onClick={() => setActive(node)} />
-                  {i < BRANCH.length - 1 && <Connector />}
-                </div>
-              ))}
-            </div>
+          <div className="mt-4 hidden lg:grid lg:grid-cols-4 lg:gap-x-10">
+            {BRANCH.map((node, i) => (
+              <div key={node.id} className="relative">
+                <NodeCard node={node} index={i + 1} onClick={() => setActive(node)} />
+                {i < BRANCH.length - 1 && (
+                  <Flow dir="right" className="absolute -right-10 top-1/2" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <MobileStepper nodes={BRANCH} onOpen={setActive} />
           </div>
         </div>
       </Reveal>
@@ -128,9 +291,10 @@ export function Pipeline() {
       <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <SheetContent className="border-border bg-[#031818] text-foreground">
           <SheetHeader>
+            <div>{active && <Badge kind={active.kind} />}</div>
             <SheetTitle className="text-foreground">{active?.title}</SheetTitle>
             <SheetDescription className="font-mono text-xs text-teal-mid">
-              {active?.kind} · {active?.note}
+              {active?.note}
             </SheetDescription>
           </SheetHeader>
           <p className="px-4 text-sm leading-relaxed text-[var(--body)]">{active?.detail}</p>

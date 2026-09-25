@@ -80,8 +80,6 @@ export function SceneSchematic({
       <g stroke="rgba(194,211,210,0.35)" strokeWidth="4">
         {Array.from({ length: 8 }, (_, i) => (
           <g key={i}>
-            <line x1={262 - i * 0} y1={0} x2={0} y2={0} opacity="0" />
-            <line x1={250 - i * 0} y1={0} x2={0} y2={0} opacity="0" />
             <line x1={262} y1={158 + i * 18} x2={286} y2={158 + i * 18} />
             <line x1={514} y1={158 + i * 18} x2={538} y2={158 + i * 18} />
             <line x1={308 + i * 12} y1={116} x2={308 + i * 12} y2={140} />

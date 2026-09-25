@@ -40,7 +40,7 @@ export function EventTimeline({
         <div className="relative min-w-[560px]">
           <div
             className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-teal"
-            style={{ left: `calc(140px + (100% - 140px) * ${playhead / 100})` }}
+            style={{ left: `calc(152px + (100% - 152px) * ${playhead / 100})` }}
             aria-hidden
           />
 
@@ -81,7 +81,7 @@ export function EventTimeline({
             </div>
           ))}
 
-          <div className="ml-[140px] mt-3 flex justify-between border-t border-border pt-2 font-mono text-[10px] text-muted-foreground">
+          <div className="ml-[152px] mt-3 flex justify-between border-t border-border pt-2 font-mono text-[10px] text-muted-foreground">
             <span>00:00.0</span>
             <span>{formatTime(duration / 2)}</span>
             <span>{formatTime(duration)}</span>

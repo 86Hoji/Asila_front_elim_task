@@ -26,7 +26,9 @@ export function SampleVideosTab() {
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-foreground">{name.replace(".mp4", "")}</span>
+                <span className="font-mono text-sm text-foreground">
+                  {name.replace(".mp4", "")}
+                </span>
                 <span
                   className={cn(
                     "h-2 w-2 rounded-full",

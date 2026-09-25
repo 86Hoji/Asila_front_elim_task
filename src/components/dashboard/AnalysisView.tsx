@@ -14,8 +14,8 @@ export function AnalysisView({
 }: {
   result: AnalysisResult;
   mode: "video" | "schematic";
-  src?: string;
-  note?: string;
+  src?: string | undefined;
+  note?: string | undefined;
 }) {
   const player = usePlayer(result.duration, mode === "schematic");
 
@@ -29,7 +29,7 @@ export function AnalysisView({
         onSeek={player.seek}
       />
       <RiskChart risk={result.risk} currentTime={player.currentTime} onSeek={player.seek} />
-      <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[2fr_1fr] [&>*]:min-w-0">
         <EventList events={result.events} currentTime={player.currentTime} onSeek={player.seek} />
         <ClassStats events={result.events} />
       </div>

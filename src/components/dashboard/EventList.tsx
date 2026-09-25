@@ -17,10 +17,7 @@ export function EventList({
   const [sort, setSort] = useState<SortKey>("start");
   const [filter, setFilter] = useState<EventClass | "all">("all");
 
-  const classes = useMemo(
-    () => [...new Set(events.map((e) => e[2]))] as EventClass[],
-    [events],
-  );
+  const classes = useMemo(() => [...new Set(events.map((e) => e[2]))] as EventClass[], [events]);
 
   const rows = useMemo(() => {
     const list = events.filter((e) => filter === "all" || e[2] === filter);
@@ -131,8 +128,12 @@ export function EventList({
                       {EVENT_CLASS_LABELS[e[2]]}
                     </span>
                   </td>
-                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">{formatTime(e[0])}</td>
-                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">{formatTime(e[1])}</td>
+                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">
+                    {formatTime(e[0])}
+                  </td>
+                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">
+                    {formatTime(e[1])}
+                  </td>
                   <td className="py-2.5 font-mono text-xs text-muted-foreground">
                     {(e[1] - e[0]).toFixed(1)}s
                   </td>

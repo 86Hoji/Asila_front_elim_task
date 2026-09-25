@@ -13,7 +13,9 @@ export function Counter({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduced = useReducedMotion();
-  const [display, setDisplay] = useState(reduced ? value : 0);
+  // Server and first client render show the real value, so the number is never wrong
+  // without JavaScript; the count-up only runs once the counter is in view.
+  const [display, setDisplay] = useState(value);
 
   useEffect(() => {
     if (!inView || reduced) return;

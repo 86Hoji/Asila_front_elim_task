@@ -32,14 +32,7 @@ function RoadLines() {
     const push = (x1: number, z1: number, x2: number, z2: number) => {
       pts.push(x1, 0, z1, x2, 0, z2);
     };
-    const dashed = (
-      x1: number,
-      z1: number,
-      x2: number,
-      z2: number,
-      seg = 1.6,
-      gap = 1.6,
-    ) => {
+    const dashed = (x1: number, z1: number, x2: number, z2: number, seg = 1.6, gap = 1.6) => {
       const dx = x2 - x1;
       const dz = z2 - z1;
       const len = Math.hypot(dx, dz);

@@ -35,20 +35,23 @@ export const EVENT_CLASS_LABELS: Record<EventClass, string> = {
 };
 
 export const EVENT_CLASS_DEFINITIONS: Record<EventClass, string> = {
-  accident: "Two or more road users physically collide inside the camera view.",
-  near_miss: "Trajectories would have collided; one party brakes or swerves within a second.",
-  red_light: "A vehicle enters the intersection after the signal phase has turned red.",
-  wrong_way: "A vehicle travels against the legal direction of its lane.",
-  illegal_u_turn: "A vehicle reverses direction where the road markings forbid it.",
-  stopped_vehicle: "A vehicle stays motionless in a live lane for longer than the dwell threshold.",
-  jaywalking: "A pedestrian crosses outside the zebra or during the pedestrian red phase.",
-  failure_to_yield: "A turning vehicle does not give way to a road user with priority.",
-  illegal_turn: "A turn is taken from a lane or phase where that movement is not allowed.",
-  solid_line_crossing: "A vehicle crosses a continuous lane divider.",
-  stop_line: "A vehicle crosses or stops beyond the painted stop line during red.",
-  congestion: "Queue length and mean speed cross the congestion threshold for the approach.",
-  road_obstacle: "A static non-vehicle object blocks part of the carriageway.",
-  fire_smoke: "Fire or smoke is visible in the scene.",
+  accident: "Two or more road users, or a road user and a fixed object, make physical contact.",
+  near_miss: "Sharp braking or swerving to avoid a collision, with no contact.",
+  red_light: "A vehicle crosses the stop line while its signal is red.",
+  wrong_way:
+    "A vehicle moves against the traffic direction of its lane, including driving in the oncoming lane.",
+  illegal_u_turn: "A U-turn where road markings or signs prohibit it.",
+  stopped_vehicle:
+    "A vehicle stands still on the carriageway for 10 s or more, and not as part of a queue at a signal.",
+  jaywalking: "A pedestrian is on the carriageway outside a crossing.",
+  failure_to_yield:
+    "A vehicle drives through a crossing while a pedestrian is on it or stepping onto it.",
+  illegal_turn: "A turn from the wrong lane or in a prohibited direction.",
+  solid_line_crossing: "A lane change or manoeuvre across a solid marking.",
+  stop_line: "A vehicle stops past the stop line on red without entering the intersection.",
+  congestion: "Traffic at a standstill or crawling across all lanes of one direction.",
+  road_obstacle: "Debris, an animal or a fallen object on the carriageway.",
+  fire_smoke: "Visible fire or smoke from a vehicle or on the road.",
 };
 
 /** Formats seconds as mm:ss.d */

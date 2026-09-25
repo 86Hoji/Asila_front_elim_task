@@ -37,7 +37,9 @@ export function LinksFooter() {
             return (
               <Reveal key={item.title} delay={0.04 * i}>
                 {pending ? (
-                  <div className="glass relative h-full cursor-not-allowed p-6 opacity-70">{content}</div>
+                  <div className="glass relative h-full cursor-not-allowed p-6 opacity-70">
+                    {content}
+                  </div>
                 ) : (
                   <a
                     href={item.href}

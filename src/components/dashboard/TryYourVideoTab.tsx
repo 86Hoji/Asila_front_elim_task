@@ -234,7 +234,10 @@ export function TryYourVideoTab() {
         <UploadCloud className="h-8 w-8 text-teal" />
         <h3 className="mt-5 text-lg font-semibold">Drop an .mp4 here</h3>
         <p className="mt-2 text-sm text-[var(--body)]">
-          Up to 2 minutes and 200 MB. Your clip never leaves this browser in demo mode.
+          Up to 2 minutes and 200 MB.{" "}
+          {USE_MOCK || !API_BASE
+            ? "Demo mode: your clip never leaves this browser and the result is simulated."
+            : "Your clip is sent to our analysis server for processing and is not stored."}
         </p>
         <button
           type="button"
