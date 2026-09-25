@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CLASS_ORDER } from "@/components/control-room/analysis";
 import { RISK_THRESHOLD } from "@/config";
@@ -31,16 +31,12 @@ function useShift() {
       for (const c of classes) row[c] = 0;
       return row;
     });
-    const heat = new Map<EventClass, number[]>(
-      classes.map((c) => [c, Array.from({ length: minutes }, () => 0)]),
-    );
     let offset = 0;
     for (const f of FEEDS) {
       for (const e of f.events) {
         const m = Math.min(minutes - 1, Math.floor((offset + e[0]) / 60));
         perMinute[m]![e[2]] = (perMinute[m]![e[2]] ?? 0) + 1;
         perMinute[m]!.total += 1;
-        heat.get(e[2])![m]! += 1;
       }
       for (const [t, v] of f.risk) {
         const m = Math.min(minutes - 1, Math.floor((offset + t) / 60));
@@ -65,7 +61,7 @@ function useShift() {
       };
     });
 
-    return { minutes, classes, perMinute, heat, feeds };
+    return { minutes, classes, perMinute, feeds };
   }, []);
 }
 
@@ -112,60 +108,6 @@ function Card({
       </div>
       <div className="mt-4">{children}</div>
     </section>
-  );
-}
-
-function HeatStrip({ heat, minutes }: { heat: Map<EventClass, number[]>; minutes: number }) {
-  const [hover, setHover] = useState<{ cls: EventClass; m: number; v: number } | null>(null);
-  return (
-    <div>
-      <div className="scrollbar-thin-teal overflow-x-auto pb-1">
-        <div className="min-w-[560px] space-y-1.5">
-          {[...heat.entries()].map(([cls, row]) => (
-            <div key={cls} className="flex items-center gap-3">
-              <span className="w-[120px] shrink-0 truncate font-mono text-[10px] text-[var(--body)]">
-                {cls}
-              </span>
-              <div className="flex flex-1 gap-[3px]">
-                {row.map((v, m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onMouseEnter={() => setHover({ cls, m, v })}
-                    onFocus={() => setHover({ cls, m, v })}
-                    onMouseLeave={() => setHover(null)}
-                    onBlur={() => setHover(null)}
-                    aria-label={`${cls}, minute ${m + 1}: ${v} events`}
-                    className={cn(
-                      "h-5 flex-1 rounded-[3px] border border-border transition-transform hover:scale-y-125",
-                      hover?.cls === cls && hover.m === m && "ring-1 ring-teal",
-                    )}
-                    style={{
-                      background:
-                        v > 0
-                          ? `color-mix(in oklab, ${EVENT_CLASS_COLORS[cls]} ${Math.min(90, 35 + v * 25)}%, transparent)`
-                          : "rgba(0,194,188,0.05)",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-          <div className="flex items-center gap-3">
-            <span className="w-[120px] shrink-0" />
-            <div className="flex flex-1 justify-between font-mono text-[9px] text-muted-foreground">
-              <span>min 1</span>
-              <span>min {minutes}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p className="mt-3 h-4 font-mono text-[11px] text-teal" aria-live="polite">
-        {hover
-          ? `${EVENT_CLASS_LABELS[hover.cls]} · minute ${hover.m + 1} · ${hover.v} event${hover.v === 1 ? "" : "s"}`
-          : "hover a cell for details"}
-      </p>
-    </div>
   );
 }
 
@@ -313,66 +255,62 @@ export function OperatorTab() {
           )}
         </Card>
 
-        <Card title="HEAT STRIP · EVENTS PER MINUTE PER CLASS">
-          <HeatStrip heat={s.heat} minutes={s.minutes} />
+        <Card title="PER-FEED COMPARISON">
+          <div className="scrollbar-thin-teal overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left">
+              <thead>
+                <tr className="mono-label border-b border-border">
+                  <th className="pb-2 font-normal">feed</th>
+                  <th className="pb-2 font-normal">lighting</th>
+                  <th className="pb-2 font-normal">duration</th>
+                  <th className="pb-2 text-right font-normal">events</th>
+                  <th className="pb-2 text-right font-normal">/ min</th>
+                  <th className="pb-2 text-right font-normal">alarms</th>
+                  <th className="pb-2 text-right font-normal">peak risk</th>
+                  <th className="pb-2 pl-4 font-normal">top class</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.feeds.map((f) => (
+                  <tr key={f.id} className="border-b border-border/60">
+                    <td className="py-2.5 font-mono text-xs text-foreground">CAM · {f.id}</td>
+                    <td className="py-2.5 font-mono text-xs text-[var(--body)]">{f.lighting}</td>
+                    <td className="py-2.5 font-mono text-xs text-[var(--body)]">
+                      {formatTime(f.duration)}
+                    </td>
+                    <td className="py-2.5 text-right font-mono text-xs text-foreground">
+                      {f.events}
+                    </td>
+                    <td className="py-2.5 text-right font-mono text-xs text-[var(--body)]">
+                      {f.perMin.toFixed(2)}
+                    </td>
+                    <td
+                      className={cn(
+                        "py-2.5 text-right font-mono text-xs",
+                        f.alarms ? "text-[#ff4d6d]" : "text-muted-foreground",
+                      )}
+                    >
+                      {f.alarms}
+                    </td>
+                    <td className="py-2.5 text-right font-mono text-xs text-[var(--body)]">
+                      {f.peak.toFixed(2)}
+                    </td>
+                    <td className="py-2.5 pl-4 text-xs">
+                      {f.top ? (
+                        <span style={{ color: EVENT_CLASS_COLORS[f.top] }}>
+                          {EVENT_CLASS_LABELS[f.top]}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
-
-      <Card title="PER-FEED COMPARISON">
-        <div className="scrollbar-thin-teal overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left">
-            <thead>
-              <tr className="mono-label border-b border-border">
-                <th className="pb-2 font-normal">feed</th>
-                <th className="pb-2 font-normal">lighting</th>
-                <th className="pb-2 font-normal">duration</th>
-                <th className="pb-2 text-right font-normal">events</th>
-                <th className="pb-2 text-right font-normal">/ min</th>
-                <th className="pb-2 text-right font-normal">alarms</th>
-                <th className="pb-2 text-right font-normal">peak risk</th>
-                <th className="pb-2 pl-4 font-normal">top class</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.feeds.map((f) => (
-                <tr key={f.id} className="border-b border-border/60">
-                  <td className="py-2.5 font-mono text-xs text-foreground">CAM · {f.id}</td>
-                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">{f.lighting}</td>
-                  <td className="py-2.5 font-mono text-xs text-[var(--body)]">
-                    {formatTime(f.duration)}
-                  </td>
-                  <td className="py-2.5 text-right font-mono text-xs text-foreground">
-                    {f.events}
-                  </td>
-                  <td className="py-2.5 text-right font-mono text-xs text-[var(--body)]">
-                    {f.perMin.toFixed(2)}
-                  </td>
-                  <td
-                    className={cn(
-                      "py-2.5 text-right font-mono text-xs",
-                      f.alarms ? "text-[#ff4d6d]" : "text-muted-foreground",
-                    )}
-                  >
-                    {f.alarms}
-                  </td>
-                  <td className="py-2.5 text-right font-mono text-xs text-[var(--body)]">
-                    {f.peak.toFixed(2)}
-                  </td>
-                  <td className="py-2.5 pl-4 text-xs">
-                    {f.top ? (
-                      <span style={{ color: EVENT_CLASS_COLORS[f.top] }}>
-                        {EVENT_CLASS_LABELS[f.top]}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 }
