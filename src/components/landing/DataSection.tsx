@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
@@ -71,7 +72,50 @@ function Figure({ children, caption }: { children: React.ReactNode; caption: str
   );
 }
 
+/**
+ * Shows our exported EDA figure from /public/eda when it exists; until it loads (or if
+ * it is missing) the SVG drawing is shown instead.
+ */
+function EdaImage({
+  src,
+  alt,
+  fallback,
+  onLoaded,
+}: {
+  src: string;
+  alt: string;
+  fallback: ReactNode;
+  onLoaded?: () => void;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const done = () => {
+    setLoaded(true);
+    onLoaded?.();
+  };
+  // The image may finish before hydration, so check once on mount as well.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) done();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={done}
+        className={loaded ? "block h-auto w-full" : "hidden"}
+      />
+      {!loaded && fallback}
+    </>
+  );
+}
+
 export function DataSection() {
+  const [velocityImage, setVelocityImage] = useState(false);
   const minutes = SAMPLE_STATS.totalMinutes;
 
   return (
@@ -123,7 +167,11 @@ export function DataSection() {
         <Reveal delay={0.04} className="md:col-span-2 lg:row-span-2">
           <Card title="SCENE MAP">
             <Figure caption="Our own drawing of the junction: lanes and their directions, the stop line, three crossings, the junction area and refuge islands — the zones every rule reasons about.">
-              <SceneMapFigure />
+              <EdaImage
+                src="/eda/scene_map_dark.png"
+                alt="Scene map: lanes with their directions, stop line, crossings, junction area and refuge islands."
+                fallback={<SceneMapFigure />}
+              />
             </Figure>
           </Card>
         </Reveal>
@@ -148,7 +196,12 @@ export function DataSection() {
           <Card title="MEAN VELOCITY FIELD">
             <div className="grid items-center gap-6 lg:grid-cols-[2fr_1fr]">
               <div className="overflow-hidden rounded-xl border border-border">
-                <VelocityFieldFigure />
+                <EdaImage
+                  src="/eda/velocity_field_dark.png"
+                  alt="Mean velocity field: average track direction per grid cell, coloured by heading."
+                  fallback={<VelocityFieldFigure />}
+                  onLoaded={() => setVelocityImage(true)}
+                />
               </div>
               <div className="space-y-3 text-sm text-[var(--body)]">
                 <p>
@@ -157,7 +210,9 @@ export function DataSection() {
                   learned.
                 </p>
                 <p className="font-mono text-[11px] text-muted-foreground">
-                  Schematic drawing · arrows coloured by heading (see the wheel)
+                  {velocityImage
+                    ? "Arrows coloured by heading (see the wheel)"
+                    : "Schematic drawing · arrows coloured by heading (see the wheel)"}
                 </p>
               </div>
             </div>
