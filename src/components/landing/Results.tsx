@@ -38,18 +38,27 @@ const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({
   example: exampleFor(label),
 }));
 
-const FAILURES = [
+const { jaywalking: jw, scoreA, falseAlarms } = RESULTS;
+
+const LIMITATIONS = [
   {
-    title: "[TODO] Occlusion at the far approach",
-    body: "[TODO: describe the failure, how often it happened and what it costs us in F1.]",
+    title: "Pedestrians cutting corners",
+    wrong: "People shortcutting across the corner were confused with jaywalking.",
+    did: `We now require at least ${jw.minMetres} m and ${jw.minSeconds} s on the asphalt.`,
+    result: `Jaywalking F1 went from ${jw.f1Before.toFixed(2)} to ${jw.f1After.toFixed(2)}; it is still our weakest class.`,
   },
   {
-    title: "[TODO] Dusk colour shift",
-    body: "[TODO: describe the failure, how often it happened and what it costs us in F1.]",
+    title: "Queues and signals",
+    wrong:
+      "Cars stuck in a queue past the stop line were flagged as stop_line, and failure_to_yield fired while pedestrians had a red light.",
+    did: "Both rules now check the queue and the pedestrian signal.",
+    result: `Score A went from ${scoreA[0]!.value.toFixed(3)} to ${scoreA[1]!.value.toFixed(3)}.`,
   },
   {
-    title: "[TODO] Segment boundary drift",
-    body: "[TODO: describe the failure, how often it happened and what it costs us in F1.]",
+    title: "No real crash in the samples",
+    wrong: "The sample videos contain no real accident.",
+    did: `accident, near_miss and the risk score are verified only for not raising false alarms (${falseAlarms.after} false alarm in ${falseAlarms.minutes} minutes).`,
+    result: "Whether they fire on a real crash is untested.",
   },
 ];
 
@@ -205,20 +214,33 @@ export function Results() {
       </div>
 
       <Reveal delay={0.08}>
-        <h3 className="mt-20 text-2xl font-bold md:text-3xl">Failure cases</h3>
+        <h3 className="mt-20 text-2xl font-bold md:text-3xl">Known limitations</h3>
         <p className="mt-3 max-w-2xl text-[var(--body)]">
           Where the system is still wrong, and why. We would rather show this than hide it.
         </p>
       </Reveal>
       <div className="mt-8 grid gap-5 md:grid-cols-3">
-        {FAILURES.map((f, i) => (
+        {LIMITATIONS.map((f, i) => (
           <Reveal key={i} delay={0.04 * i}>
             <article
               className="glass hover-lift h-full border-l-2 p-6"
               style={{ borderLeftColor: "#ff8c42" }}
             >
               <h4 className="text-base font-semibold">{f.title}</h4>
-              <p className="mt-3 text-sm text-[var(--body)]">{f.body}</p>
+              <dl className="mt-3 space-y-2 text-sm text-[var(--body)]">
+                {(
+                  [
+                    ["What went wrong", f.wrong],
+                    ["What we did", f.did],
+                    ["Result", f.result],
+                  ] as const
+                ).map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="mono-label text-[10px]">{k}</dt>
+                    <dd className="mt-0.5">{v}</dd>
+                  </div>
+                ))}
+              </dl>
             </article>
           </Reveal>
         ))}
