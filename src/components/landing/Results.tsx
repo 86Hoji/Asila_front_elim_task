@@ -96,14 +96,16 @@ const COUNTS = SAMPLE_STATS.perClass.map(([label, count]) => ({
   example: exampleFor(label),
 }));
 
-const { jaywalking: jw, scoreA, falseAlarms } = RESULTS;
+const { jaywalking: jw, scoreA, falseAlarms, perClass } = RESULTS;
+const jwMean = (set: "dev" | "heldOut") =>
+  perClass[set].rows.find((r) => r.cls === "jaywalking")?.mean.toFixed(3) ?? "–";
 
 const LIMITATIONS = [
   {
     title: "Pedestrians cutting corners",
     wrong: "People shortcutting across the corner were confused with jaywalking.",
     did: `We now require at least ${jw.minMetres} m and ${jw.minSeconds} s on the asphalt.`,
-    result: `Jaywalking F1 went from ${jw.f1Before.toFixed(2)} to ${jw.f1After.toFixed(2)}; it is still our weakest class.`,
+    result: `Jaywalking F1 went from ${jw.f1Before.toFixed(2)} to ${jw.f1After.toFixed(2)} with this rule. With the final rules it is ${jwMean("dev")} on dev and ${jwMean("heldOut")} held-out; its segment boundaries still pull the dev average down.`,
   },
   {
     title: "Queues and signals",
@@ -115,7 +117,7 @@ const LIMITATIONS = [
   {
     title: "No real crash in the samples",
     wrong: "The sample videos contain no real accident.",
-    did: `accident, near_miss and the risk score are verified only for not raising false alarms (${falseAlarms.after} false alarm in ${falseAlarms.minutes} minutes).`,
+    did: `accident, near_miss and the risk score are verified only for not raising false alarms (${falseAlarms.after} false alarms in ${falseAlarms.minutes} minutes).`,
     result: "Whether they fire on a real crash is untested.",
   },
 ];

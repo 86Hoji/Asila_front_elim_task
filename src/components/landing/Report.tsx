@@ -3,7 +3,7 @@ import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
 import { RESULTS } from "@/content/results";
 
-const { scoreA, falseAlarms, runtime } = RESULTS;
+const { scoreA, falseAlarms, runtime, heldOutScore } = RESULTS;
 const first = scoreA[0]!.value.toFixed(3);
 const last = scoreA[scoreA.length - 1]!.value.toFixed(3);
 
@@ -12,7 +12,7 @@ const COLUMNS = [
     title: "What worked",
     accent: "var(--teal)",
     items: [
-      `A detector and a tracker plus rules on trajectories and scene geometry: Score A on our dev labels rose from ${first} to ${last} in three rule revisions.`,
+      `A detector and a tracker plus rules on trajectories and scene geometry: Score A on our dev videos rose from ${first} to ${last} over our rule revisions (the last step also uses the final labels); ${heldOutScore?.toFixed(3) ?? "not yet measured"} on the held-out videos.`,
       `Time-to-collision on the road plane for Part B: false alarms cut from ${falseAlarms.before[0]}-${falseAlarms.before[1]} to ${falseAlarms.after} in ${falseAlarms.minutes} minutes, strictly causal (enforced by a test).`,
       `Deterministic and offline: fixed stride per device, identical results across runs, ${runtime.min}-${runtime.max}× the video length against a ${runtime.limit}× limit.`,
     ],
@@ -22,7 +22,7 @@ const COLUMNS = [
     accent: "#ff8c42",
     items: [
       "The samples contain no real accident, so accident detection and the risk score are untested on a real crash.",
-      "Recall is probably overestimated: our labels started from the rules' own candidates, so events the rules missed may be absent.",
+      "Recall is an upper bound: our labels came from reviewing the rules' own candidates (only C3905 was watched end to end), so events every version of the rules missed never enter the metric. On C3905, watching in full revealed 1-2 missed events out of ~10.",
       "Jaywalking remains hard to separate from people cutting corners.",
     ],
   },
@@ -30,7 +30,7 @@ const COLUMNS = [
     title: "What we'd do next",
     accent: "var(--lavender)",
     items: [
-      "Score the held-out videos and label every video end to end to measure recall properly.",
+      "Label every video end to end to measure recall properly.",
       "Test accident detection and risk on public crash footage (CADP).",
       "Finish the lane rules: illegal_turn and solid_line_crossing.",
       "Benchmark on T4-class hardware.",
