@@ -69,7 +69,7 @@ export const TEAM = [
     previous: "Yoshlar Radar, a GovTech youth-employment platform (NEXUS30 hackathon).",
     links: {
       github: "https://github.com/ubaydullayevzafar1308-ops",
-      linkedin: "",
+      linkedin: "https://www.linkedin.com/in/zafar-ubaydullayev-741190360/",
       portfolio: "",
     },
   },
