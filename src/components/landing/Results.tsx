@@ -125,9 +125,7 @@ function HowWeMeasured() {
       <h3 className="mono-label text-teal-mid">HOW WE MEASURED</h3>
       <ul className="mt-4 space-y-2 text-sm text-[var(--body)]">
         <li>
-          We labelled all {labels.videos} sample videos ourselves, following the organisers&apos;
-          start/end conventions: {labels.confirmed} candidate events confirmed, {labels.rejected}{" "}
-          rejected.
+          Our labels: {labels.events} events across the {labels.videos} sample videos.
         </li>
         <li>
           Thresholds were tuned only on {devVideos.join(" and ")}. {heldOutVideos.join(" and ")} are
