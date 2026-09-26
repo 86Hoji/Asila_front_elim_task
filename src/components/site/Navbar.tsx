@@ -49,6 +49,12 @@ export function Navbar() {
           ))}
           <Link
             to="/dashboard"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Dashboard
+          </Link>
+          <Link
+            to="/dashboard"
             className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)]"
           >
             Try the demo
@@ -79,6 +85,13 @@ export function Navbar() {
                 {item.label}
               </a>
             ))}
+            <Link
+              to="/dashboard"
+              onClick={() => setOpen(false)}
+              className="py-1 text-sm text-muted-foreground"
+            >
+              Dashboard
+            </Link>
             <Link
               to="/dashboard"
               className="mt-2 rounded-full bg-primary px-5 py-2 text-center text-sm font-semibold text-primary-foreground"
