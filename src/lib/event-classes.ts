@@ -10,7 +10,7 @@ export const EVENT_CLASS_COLORS: Record<EventClass, string> = {
   jaywalking: "#06d6a0",
   failure_to_yield: "#f72585",
   illegal_turn: "#9d4edd",
-  solid_line_crossing: "#ffb703",
+  solid_line_crossing: "#5b7cff",
   stop_line: "#fb8500",
   congestion: "#8ecae6",
   road_obstacle: "#adb5bd",
