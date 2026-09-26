@@ -43,8 +43,9 @@ export function LinksFooter() {
                 ) : (
                   <a
                     href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
+                    {...(item.href.startsWith("http")
+                      ? { target: "_blank", rel: "noreferrer" }
+                      : {})}
                     className="glass hover-lift relative block h-full p-6"
                   >
                     {content}

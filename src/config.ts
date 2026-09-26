@@ -31,10 +31,12 @@ export const HERO_METRICS = [
 ] as const;
 
 export const LINKS = {
-  github: "[TODO]",
-  weights: "[TODO]",
-  predictions: "[TODO]",
-  report: "[TODO]",
+  github: "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV",
+  weights: "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV/tree/main/weights",
+  predictions:
+    "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV/blob/main/predictions_samples.json",
+  /** Same-site anchor. */
+  report: "/#report",
 };
 
 export const TEAM = [
@@ -67,7 +69,7 @@ export const TEAM = [
     previous: "Yoshlar Radar, a GovTech youth-employment platform (NEXUS30 hackathon).",
     links: {
       github: "https://github.com/ubaydullayevzafar1308-ops",
-      linkedin: "https://www.linkedin.com/in/zafar-ubaydullayev-741190360/",
+      linkedin: "",
       portfolio: "",
     },
   },
