@@ -54,11 +54,14 @@ export const EVENT_CLASS_DEFINITIONS: Record<EventClass, string> = {
   fire_smoke: "Visible fire or smoke from a vehicle or on the road.",
 };
 
-/** Formats seconds as mm:ss.d */
+/**
+ * Formats seconds as mm:ss.d. Works in whole tenths so rounding carries into the
+ * minutes (119.97 s -> "02:00.0", never "01:60.0").
+ */
 export function formatTime(seconds: number): string {
-  const safe = Math.max(0, seconds);
-  const m = Math.floor(safe / 60);
-  const s = safe - m * 60;
+  const t10 = Math.round(Math.max(0, seconds) * 10);
+  const m = Math.floor(t10 / 600);
+  const s = (t10 % 600) / 10;
   return `${String(m).padStart(2, "0")}:${s.toFixed(1).padStart(4, "0")}`;
 }
 
