@@ -61,11 +61,11 @@ export function Hero() {
               <div key={m.label} className="bg-[var(--surface)] px-5 py-6 backdrop-blur-md">
                 <dt className="sr-only">{m.label}</dt>
                 <dd>
-                  <Counter
-                    value={m.value}
-                    suffix={m.suffix}
-                    decimals={"decimals" in m ? m.decimals : 0}
-                  />
+                  {"text" in m ? (
+                    <span className="font-mono text-3xl text-foreground md:text-4xl">{m.text}</span>
+                  ) : (
+                    <Counter value={m.value} suffix={m.suffix} />
+                  )}
                   <p className="mt-2 text-xs text-muted-foreground">{m.label}</p>
                 </dd>
               </div>

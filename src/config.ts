@@ -19,12 +19,12 @@ export const HERO_METRICS = [
   {
     value: RESULTS.falseAlarms.after,
     suffix: "",
-    label: `false alarm in ${RESULTS.falseAlarms.minutes} min`,
+    label: `false alarms in ${RESULTS.falseAlarms.minutes} min`,
   },
   { value: 4, suffix: "K", label: "· 29.97 fps input" },
   {
-    value: RESULTS.runtime.typical,
-    decimals: 1,
+    value: RESULTS.runtime.max,
+    text: `${RESULTS.runtime.min}-${RESULTS.runtime.max}×`,
     suffix: "×",
     label: `processing time vs. video length (limit ${RESULTS.runtime.limit}×)`,
   },
