@@ -341,7 +341,13 @@ export function Results() {
         </div>
       </Reveal>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 4 columns when the cards fill whole rows of 4 (e.g. 8 classes), otherwise 3. */}
+      <div
+        className={cn(
+          "mt-8 grid gap-5 sm:grid-cols-2",
+          COUNTS.length % 4 === 0 && COUNTS.length % 3 !== 0 ? "lg:grid-cols-4" : "lg:grid-cols-3",
+        )}
+      >
         {COUNTS.map((c, i) => (
           <Reveal key={c.label} delay={0.04 * i}>
             <article className="glass hover-lift h-full p-6">
