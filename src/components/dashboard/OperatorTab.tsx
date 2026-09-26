@@ -126,17 +126,26 @@ export function OperatorTab() {
       label: "total events",
       value: String(SAMPLE_STATS.eventCount),
       spark: <Spark values={totals} />,
+      sparkLabel: "events per shift minute",
     },
-    { label: "events / minute", value: perMin.toFixed(2), spark: <Spark values={cumulative} /> },
+    {
+      label: "events / minute",
+      value: perMin.toFixed(2),
+      spark: <Spark values={cumulative} />,
+      sparkLabel: "cumulative events",
+    },
     {
       label: "alarms raised",
       value: String(SAMPLE_STATS.alarms.length),
+      caption: "all false — no crash in the samples",
       spark: <Spark values={peaks} color="#ff4d6d" max={1} />,
+      sparkLabel: "peak risk per shift minute",
     },
     {
       label: "most frequent class",
       value: top ? EVENT_CLASS_LABELS[top[0]] : "—",
       spark: <Spark values={topSeries} color={top ? EVENT_CLASS_COLORS[top[0]] : undefined} />,
+      sparkLabel: "this class per shift minute",
     },
   ];
 
@@ -161,7 +170,9 @@ export function OperatorTab() {
           <div key={k.label} className="glass hover-lift flex flex-col p-5">
             <p className="mono-label">{k.label}</p>
             <p className="mt-2 truncate font-mono text-2xl text-foreground">{k.value}</p>
-            <div className="mt-3">{k.spark}</div>
+            {"caption" in k && <p className="mt-1 text-xs text-[#ff8c9f]">{k.caption}</p>}
+            <div className="mt-auto pt-3">{k.spark}</div>
+            <p className="mt-1 font-mono text-[9px] text-muted-foreground">{k.sparkLabel}</p>
           </div>
         ))}
       </div>
