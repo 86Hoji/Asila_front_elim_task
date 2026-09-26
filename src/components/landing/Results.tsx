@@ -120,22 +120,32 @@ const LIMITATIONS = [
 
 function HowWeMeasured() {
   const { labels, devVideos, heldOutVideos, scoreA, heldOutScore } = RESULTS;
+  const dev = scoreA[scoreA.length - 1]!.value;
   return (
     <div className="glass mt-12 p-6 md:p-8">
       <h3 className="mono-label text-teal-mid">HOW WE MEASURED</h3>
       <ul className="mt-4 space-y-2 text-sm text-[var(--body)]">
         <li>
-          Our labels: {labels.events} events across the {labels.videos} sample videos.
+          Labels: {labels.events} events across the {labels.videos} sample videos, following the
+          organisers&apos; start/end conventions.
         </li>
         <li>
-          Thresholds were tuned only on {devVideos.join(" and ")}. {heldOutVideos.join(" and ")} are
-          held out for an honest check.
+          Thresholds were tuned on {devVideos.join(" and ")}; {heldOutVideos.join(" and ")} were
+          held out.
         </li>
       </ul>
 
+      <div
+        role="note"
+        className="mt-5 rounded-xl border border-[#ffd23f]/60 bg-[rgba(255,210,63,0.08)] p-4 text-sm leading-relaxed text-foreground"
+      >
+        <p className="mono-label text-[#ffd23f]">READ THIS BEFORE THE NUMBERS</p>
+        <p className="mt-2">{RESULTS.recallCaveat}</p>
+      </div>
+
       <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="glass-raised p-5">
-          <p className="mono-label">Score A on our dev labels ({devVideos.join(" + ")})</p>
+          <p className="mono-label">Score A on dev videos ({devVideos.join(" + ")})</p>
           <ol className="mt-4 space-y-3">
             {scoreA.map((s, i) => (
               <li key={s.step} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5">
@@ -159,8 +169,14 @@ function HowWeMeasured() {
         </div>
         <div className="glass-raised flex flex-col p-5">
           <p className="mono-label">Held-out videos ({heldOutVideos.join(" + ")})</p>
-          <p className="mt-4 font-mono text-2xl text-foreground">
+          <p className="mt-4 font-mono text-3xl text-foreground">
             {heldOutScore === null ? "being measured" : heldOutScore.toFixed(3)}
+          </p>
+          <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+            Score A · dev {dev.toFixed(3)}
+          </p>
+          <p className="mt-3 text-xs leading-relaxed text-[var(--body)]">
+            Why higher than dev: {RESULTS.heldOutHigherBecause}
           </p>
         </div>
       </div>
