@@ -131,6 +131,49 @@ function Progress({
   );
 }
 
+const FFMPEG_CMD =
+  "ffmpeg -ss 0 -t 110 -i input.mp4 -vf scale=1920:-2 -c:v libx264 -crf 23 -an clip.mp4";
+
+/** How to cut a long 4K sample video down to the upload limits. */
+function SampleClipHelp() {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(FFMPEG_CMD);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <details className="group mt-4 w-full max-w-md rounded-xl border border-border bg-background/60 text-left">
+      <summary className="cursor-pointer list-none px-4 py-2.5 text-xs text-teal-mid marker:hidden hover:text-teal">
+        <span className="mr-1.5 inline-block transition-transform group-open:rotate-90">›</span>
+        Testing with a sample video?
+      </summary>
+      <div className="border-t border-border px-4 py-3">
+        <p className="text-xs text-[var(--body)]">
+          The organisers&apos; samples are longer and larger than the limits. Cut a short 1080p clip
+          that fits with ffmpeg:
+        </p>
+        <div className="mt-2 flex items-start gap-2">
+          <code className="scrollbar-thin-teal block min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-[#010909] px-3 py-2 font-mono text-[11px] text-foreground">
+            {FFMPEG_CMD}
+          </code>
+          <button
+            type="button"
+            onClick={() => void copy()}
+            className="shrink-0 rounded-lg border border-border px-2.5 py-2 font-mono text-[10px] text-muted-foreground transition-colors hover:border-teal-mid hover:text-foreground"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 export function TryYourVideoTab({ onExploreSamples }: { onExploreSamples: () => void }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
@@ -374,6 +417,10 @@ export function TryYourVideoTab({ onExploreSamples }: { onExploreSamples: () => 
               </span>
             ))}
           </div>
+          <p className="mt-3 max-w-md text-xs text-muted-foreground">
+            Rules are calibrated to this intersection; clips from other cameras get detection only.
+          </p>
+          <SampleClipHelp />
           <p className="mt-4 max-w-md text-sm text-[var(--body)]">
             {isMock()
               ? "Demo mode: your clip never leaves this browser and the result is simulated."
