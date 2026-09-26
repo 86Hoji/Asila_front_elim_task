@@ -9,7 +9,7 @@ import type { AnalysisResult } from "@/types";
 /** Mirrors the landing-page pipeline. */
 const STAGES = ["Decode", "Detect", "Track", "Rules", "Risk"];
 const MOCK_MS = 8000;
-const isMock = () => USE_MOCK || !API_BASE;
+const isMock = () => USE_MOCK;
 
 type Phase = "idle" | "working" | "done" | "error";
 

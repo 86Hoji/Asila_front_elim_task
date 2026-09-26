@@ -3,10 +3,11 @@
  * and the real backend / final submission.
  */
 
+/** Base URL of the demo API. "" means same origin (the site and /api behind one domain). */
 export const API_BASE: string = import.meta.env["VITE_API_BASE"] ?? "";
 
-/** When true (or when API_BASE is empty), "Try your video" is fully simulated. */
-export const USE_MOCK = true;
+/** "Try your video" is simulated in the browser unless VITE_USE_MOCK is "false". */
+export const USE_MOCK: boolean = import.meta.env["VITE_USE_MOCK"] !== "false";
 
 /** Sample footage is under NDA — keep false to render the scene schematic instead. */
 export const SHOW_SAMPLE_VIDEOS = false;

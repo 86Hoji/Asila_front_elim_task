@@ -42,8 +42,8 @@ Everything that changes between the demo and the final submission lives in
 
 | Flag                 | Meaning                                                                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE`      | Env var: base URL of the analysis server. Empty means mock mode.                                                                            |
-| `USE_MOCK`           | `true` simulates "Try your video" entirely in the browser (the clip is never uploaded).                                                     |
+| `VITE_API_BASE`      | Env var: base URL of the demo API. `""` (default) means same origin (`/api` on the site's domain). |
+| `VITE_USE_MOCK`      | Env var, `"true"` (default) or `"false"`. `true` simulates "Try your video" in the browser (the clip is never uploaded). |
 | `SHOW_SAMPLE_VIDEOS` | Keep `false`. The sample footage is under NDA, so the dashboard shows our scene drawing instead.                                           |
 | `HERO_METRICS`, `EDA`| Figures shown on the landing page. Every number on the site comes from here or is computed from `src/data/samples.json`.                    |
 | `RISK_THRESHOLD`     | Alarm threshold for the risk score (0.5).                                                                                                  |
@@ -76,13 +76,24 @@ npm run data:convert -- path/to/predictions_samples.json
 
 ### Live analysis ("Try your video")
 
-With `VITE_API_BASE` set and `USE_MOCK = false`, the upload tab talks to the server:
+With `VITE_USE_MOCK=false`, the upload tab talks to the server at `VITE_API_BASE` (empty = same origin):
 
 | Call                            | Response                                                          |
 | ------------------------------- | ----------------------------------------------------------------- |
 | `POST /api/analyze` (form field `video`) | `{"job_id": string}`                                     |
 | `GET /api/jobs/{id}`            | `{"status": "queued" \| "running" \| "done" \| "error", "progress": 0..1, "error"?: string}` |
 | `GET /api/jobs/{id}/result`     | `{"duration", "fps", "events", "risk", "annotated_video_url"?, "scene_matched"?}`   |
+
+## Docker (plain Node server)
+
+```sh
+docker build -t asila-site --build-arg VITE_USE_MOCK=false --build-arg VITE_API_BASE= .
+docker run -p 3000:3000 asila-site
+```
+
+Without Docker: `NITRO_PRESET=node-server npm run build && node .output/server/index.mjs`
+(listens on `PORT`, default 3000). Without `NITRO_PRESET` the build keeps Lovable's
+default Cloudflare target.
 
 ## Project layout
 
