@@ -82,11 +82,11 @@ export const TEAM = [
       "Testing and evaluation of the pipeline on our labelled sample videos",
     ],
     previous:
-      "Co-founder of Ziva (ziva.uz), an AI assistant for 736 Uzbek government services with 0 false answers across 1,985 test queries; a computer-vision clustering model for football analytics (Abstract IT).",
+      "JobLedger (jobledger.uz); a computer-vision clustering model for football analytics (Abstract IT).",
     links: {
       github: "https://github.com/tiredjon",
       linkedin: "https://www.linkedin.com/in/khamidbustanov",
-      portfolio: "https://ziva.uz",
+      portfolio: "https://jobledger.uz",
     },
   },
 ];
