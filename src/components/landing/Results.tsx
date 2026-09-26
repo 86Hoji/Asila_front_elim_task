@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import {
@@ -19,9 +20,10 @@ import {
   EVENT_CLASS_LABELS,
   formatTime,
 } from "@/lib/event-classes";
-import { RESULTS } from "@/content/results";
+import { RESULTS, type Counts, type PerClassRow } from "@/content/results";
 import { TRAJECTORIES, type Trajectory } from "@/data/eda";
 import { FEEDS, SAMPLE_STATS } from "@/data/stats";
+import { cn } from "@/lib/utils";
 import type { EventClass } from "@/types";
 
 /** First occurrence of a class across the sample feeds, e.g. "C3896 · 00:22.4-00:25.1 (2.7 s)". */
@@ -187,6 +189,88 @@ function HowWeMeasured() {
   );
 }
 
+function countsText(counts: PerClassRow["counts"]) {
+  const f = (c: Counts) => `${c.tp} / ${c.fp} / ${c.fn}`;
+  const [a, b, c] = counts.map(f);
+  if (a === b && b === c) return a;
+  if (b === c) return `${a} @0.3 · ${b} @0.5–0.7`;
+  return `${a} · ${b} · ${c}`;
+}
+
+function PerClassTable() {
+  const [tab, setTab] = useState<"dev" | "heldOut">("dev");
+  const { perClass } = RESULTS;
+  const set = perClass[tab];
+  return (
+    <div className="glass mt-8 p-6 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="mono-label text-teal-mid">ACCURACY PER CLASS · OUR LABELS</h3>
+        <div
+          role="tablist"
+          aria-label="Video set"
+          className="flex gap-1 rounded-full border border-border p-0.5"
+        >
+          {(["dev", "heldOut"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={tab === k}
+              onClick={() => setTab(k)}
+              className={cn(
+                "rounded-full px-3 py-1 font-mono text-[11px] transition-colors",
+                tab === k ? "bg-accent text-teal" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {perClass[k].title}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="mt-3 font-mono text-[11px] text-muted-foreground">
+        Score A {set.scoreA.toFixed(3)} · {set.labelled} labelled · {set.predicted} predicted
+      </p>
+      <div className="scrollbar-thin-teal mt-4 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-left">
+          <thead>
+            <tr className="mono-label border-b border-border">
+              <th className="pb-2 font-normal">class</th>
+              {perClass.tIoU.map((t) => (
+                <th key={t} className="pb-2 text-right font-normal">
+                  F1 @{t}
+                </th>
+              ))}
+              <th className="pb-2 text-right font-normal">mean</th>
+              <th className="pb-2 pl-4 font-normal">TP / FP / FN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {set.rows.map((r) => (
+              <tr key={r.cls} className="border-b border-border/60">
+                <td className="py-2 font-mono text-xs" style={{ color: EVENT_CLASS_COLORS[r.cls] }}>
+                  {r.cls}
+                </td>
+                {r.f1.map((v, i) => (
+                  <td key={i} className="py-2 text-right font-mono text-xs text-[var(--body)]">
+                    {v.toFixed(3)}
+                  </td>
+                ))}
+                <td className="py-2 text-right font-mono text-xs text-foreground">
+                  {r.mean.toFixed(3)}
+                </td>
+                <td className="py-2 pl-4 font-mono text-[11px] text-muted-foreground">
+                  {countsText(r.counts)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-xs text-[var(--body)]">Not scored: {RESULTS.notScored}</p>
+    </div>
+  );
+}
+
 export function Results() {
   const chartData = COUNTS.map((c) => ({
     ...c,
@@ -206,6 +290,10 @@ export function Results() {
 
       <Reveal delay={0.08}>
         <HowWeMeasured />
+      </Reveal>
+
+      <Reveal delay={0.08}>
+        <PerClassTable />
       </Reveal>
 
       <Reveal delay={0.1}>
