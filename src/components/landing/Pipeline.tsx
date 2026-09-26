@@ -77,9 +77,9 @@ const MAIN: Node[] = [
     id: "rules",
     title: "Rule engine",
     kind: "RULE-BASED",
-    note: "9 classes",
+    note: "11 classes",
     detail:
-      "Nine classes come from rules over trajectories, scene geometry and signal phase: stopped_vehicle, congestion, wrong_way, jaywalking, red_light, stop_line, failure_to_yield, accident, near_miss. Five classes are deliberately not predicted: under macro F1 a predicted class that is absent from the test set scores zero.",
+      "Eleven classes come from rules over trajectories, scene geometry and signal phase: stopped_vehicle, congestion, wrong_way, jaywalking, red_light, stop_line, failure_to_yield, illegal_turn, solid_line_crossing, accident, near_miss. Three classes are deliberately not predicted (illegal_u_turn, road_obstacle, fire_smoke): under macro F1 a predicted class that is absent from the test set scores zero.",
   },
   {
     id: "events",

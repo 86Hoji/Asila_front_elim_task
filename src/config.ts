@@ -15,7 +15,7 @@ export const SHOW_SAMPLE_VIDEOS = false;
 import { RESULTS } from "@/content/results";
 
 export const HERO_METRICS = [
-  { value: 9, suffix: "", label: "event classes" },
+  { value: 11, suffix: "", label: "event classes" },
   {
     value: RESULTS.falseAlarms.after,
     suffix: "",

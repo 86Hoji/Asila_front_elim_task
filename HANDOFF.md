@@ -62,11 +62,11 @@ do not touch `vite.config.ts`.
    into 0.1 s bins, prints a per-video summary and writes `src/data/samples.json` (nothing is
    written on errors). Commit.
 2. **Final numbers.** Update `src/content/results.ts` and `HERO_METRICS` in `src/config.ts`
-   (e.g. "9 event classes", "1 false alarm in 18 min"). Then re-read and fix any text that is no
+   (e.g. "11 event classes", "1 false alarm in 18 min"). Then re-read and fix any text that is no
    longer true:
-   - number of event classes: `illegal_turn` and `solid_line_crossing` now appear in
-     `eda_stats.json` → hero "9 event classes";
-   - the Rule engine drawer in `src/components/landing/Pipeline.tsx` ("Nine classes …", "Five classes
+   - number of event classes: now 11 (incl. `illegal_turn`, `solid_line_crossing`); keep the hero
+     metric and the Rule engine node/drawer in sync with the final CLASSES list;
+   - the Rule engine drawer in `src/components/landing/Pipeline.tsx` ("Eleven classes …", "Three classes
      are deliberately not predicted …");
    - Known limitations (`src/components/landing/Results.tsx`), Report (`src/components/landing/Report.tsx`),
      the other pipeline drawer texts, the "How we measured" block (held-out score: set
