@@ -4,7 +4,7 @@
  *
  *   npm run data:convert -- path/to/predictions_samples.json [--meta scripts/samples-meta.json] [--out src/data/samples.json]
  *
- * Input:  {"team": string, "videos": {"<file>.mp4": {"events": [[s, e, label]], "risk": [[t, score], ...]}}}
+ * Input:  {"team": string, "videos": {"<file>.mp4" (or .MP4): {"events": [[s, e, label]], "risk": [[t, score], ...]}}}
  * Meta:   {"<file>.mp4": {"duration": number, "fps": number, "lighting": string}}
  * Output: {"<file>.mp4": {"duration", "fps", "lighting", "events", "risk"}} with risk at 10 Hz.
  *
@@ -58,11 +58,17 @@ if (!preds || typeof preds.videos !== "object") {
   process.exit(1);
 }
 
+// Video keys may come as ".MP4"; the site uses lower-case ".mp4".
+const normalise = (name) => name.replace(/.mp4$/i, ".mp4");
+const videos = Object.fromEntries(
+  Object.entries(preds.videos).map(([name, v]) => [normalise(name), v]),
+);
+
 const round = (n, d) => Math.round(n * 10 ** d) / 10 ** d;
 const errors = [];
 const out = {};
 
-for (const [name, video] of Object.entries(preds.videos)) {
+for (const [name, video] of Object.entries(videos)) {
   const m = meta[name];
   if (!m) {
     errors.push(`${name}: missing from ${metaPath}`);
@@ -122,7 +128,7 @@ for (const [name, video] of Object.entries(preds.videos)) {
 }
 
 for (const name of Object.keys(meta)) {
-  if (!preds.videos[name]) errors.push(`${name}: in ${metaPath} but has no predictions`);
+  if (!videos[name]) errors.push(`${name}: in ${metaPath} but has no predictions`);
 }
 
 if (errors.length) {

@@ -1,6 +1,6 @@
 {
-  "C3896.mp4": { "duration": 317, "fps": 29.97, "lighting": "noon" },
-  "C3897.mp4": { "duration": 317, "fps": 29.97, "lighting": "noon" },
-  "C3902.mp4": { "duration": 317, "fps": 29.97, "lighting": "evening" },
+  "C3896.mp4": { "duration": 340.3, "fps": 29.97, "lighting": "noon" },
+  "C3897.mp4": { "duration": 317.8, "fps": 29.97, "lighting": "noon" },
+  "C3902.mp4": { "duration": 317.8, "fps": 29.97, "lighting": "evening" },
   "C3905.mp4": { "duration": 127.6, "fps": 29.97, "lighting": "dusk" }
 }
