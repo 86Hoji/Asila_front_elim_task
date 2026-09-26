@@ -147,11 +147,21 @@ const Axis = memo(function Axis({ duration, span }: { duration: number; span: nu
   for (let t = 0; t <= duration + 1e-6; t += step) ticks.push(t);
   return (
     <div className="relative h-5 border-t border-border">
-      {ticks.map((t) => (
+      {ticks.map((t, i) => (
         <span
           key={t}
-          className="absolute top-0 -translate-x-1/2 pt-1 font-mono text-[9px] text-muted-foreground first:translate-x-0"
-          style={{ left: `${(t / duration) * 100}%` }}
+          className="absolute top-0 whitespace-nowrap pt-1 font-mono text-[9px] text-muted-foreground"
+          style={{
+            left: `${(t / duration) * 100}%`,
+            // First label starts at its tick (plus a hair of padding), last one ends at it,
+            // so neither is clipped by the lane viewport; the rest are centred.
+            transform:
+              i === 0
+                ? "translateX(2px)"
+                : t >= duration - 1e-6
+                  ? "translateX(calc(-100% - 2px))"
+                  : "translateX(-50%)",
+          }}
         >
           {formatTime(t).replace(/\.0$/, "")}
         </span>
