@@ -94,8 +94,8 @@ export const TEAM = [
 export const SAMPLE_ORDER = ["C3896.mp4", "C3897.mp4", "C3902.mp4", "C3905.mp4"];
 
 export const UPLOAD_LIMITS = {
-  maxBytes: 200 * 1024 * 1024,
-  maxSeconds: 120,
+  maxBytes: 300 * 1024 * 1024,
+  maxSeconds: 180,
   accept: ".mp4",
 };
 

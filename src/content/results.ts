@@ -28,8 +28,11 @@ export const RESULTS = {
     { step: "Initial rules", value: 0.444 },
     { step: "Pedestrian-signal and queue fixes", value: 0.556 },
     { step: "Stricter jaywalking rule", value: 0.631 },
+    { step: "Lane rules (illegal turn, solid line)", value: 0.889 },
     { step: "Final rules, final labels", value: 0.881 },
   ],
+  scoreANote:
+    "Labels grew during the work (classes and events added), so early steps are not directly comparable with the final score.",
   heldOutScore: 0.901 as number | null,
   /** Shown prominently in "How we measured". */
   recallCaveat:

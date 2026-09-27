@@ -170,6 +170,7 @@ function HowWeMeasured() {
               </li>
             ))}
           </ol>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{RESULTS.scoreANote}</p>
         </div>
         <div className="glass-raised flex flex-col p-5">
           <p className="mono-label">Held-out videos ({heldOutVideos.join(" + ")})</p>

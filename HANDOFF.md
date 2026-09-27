@@ -92,12 +92,12 @@ do not touch `vite.config.ts`.
    ```
    Reverse proxy (nginx/Caddy) on one domain with HTTPS: `/api/` → demo backend, everything else →
    `127.0.0.1:3000`. Same origin, so `VITE_API_BASE` stays empty and no CORS is needed. Allow
-   uploads of 200 MB and long polls. The site and the demo must stay online through the whole
+   uploads of 300 MB and long polls. The site and the demo must stay online through the whole
    judging period.
 7. **Real demo test** with the real backend (`VITE_USE_MOCK=false`), on desktop and on a phone:
-   - clip up to 2 min → progress → result with timeline and risk curve;
+   - clip up to 3 min → progress → result with timeline and risk curve;
    - clip from a different camera → `scene_matched: false` → "Camera not recognised" notice;
-   - clip over 2 min → rejected with a message;
+   - clip over 3 min → rejected with a message;
    - backend error → readable message and "Try again";
 8. **Git.** `origin` is the Lovable-connected repo; `public` is
    `https://github.com/86Hoji/Asila_front_elim_task.git`. Push to both
@@ -140,7 +140,7 @@ Result:
 - Any non-2xx response → the UI shows the status code; `status: "error"` shows `error`.
 - The progress stepper (Decode, Detect, Track, Rules, Risk) is driven by `progress` only.
 - Upload limits (checked in the browser before upload; enforce them on the server too):
-  `.mp4` only, <= 200 MB, <= 120 s (`UPLOAD_LIMITS` in `src/config.ts`).
+  `.mp4` only, <= 300 MB, <= 180 s (`UPLOAD_LIMITS` in `src/config.ts`).
 - Mock vs real: build-time env `VITE_USE_MOCK` (`"true"` default → simulated, `"false"` → real API).
 
 ## E. Rules
