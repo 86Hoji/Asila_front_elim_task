@@ -32,7 +32,6 @@ const COLUMNS = [
     items: [
       "Label every video end to end to measure recall properly.",
       "Test accident detection and risk on public crash footage (CADP).",
-      "Finish the lane rules: illegal_turn and solid_line_crossing.",
       "Benchmark on T4-class hardware.",
     ],
   },

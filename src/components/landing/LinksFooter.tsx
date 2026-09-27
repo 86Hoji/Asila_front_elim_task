@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileJson, FileText, Github, Package } from "lucide-react";
+import { ArrowUpRight, Code, FileJson, FileText, Github, Package } from "lucide-react";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { Reveal } from "@/components/site/Reveal";
 import { Section } from "@/components/site/Section";
@@ -6,6 +6,7 @@ import { LINKS } from "@/config";
 
 const ITEMS = [
   { icon: Github, title: "GitHub repository", href: LINKS.github },
+  { icon: Code, title: "Website source", href: LINKS.site },
   { icon: Package, title: "Model weights", href: LINKS.weights },
   { icon: FileJson, title: "predictions_samples.json", href: LINKS.predictions },
   { icon: FileText, title: "Technical report", href: LINKS.report },
@@ -18,7 +19,7 @@ export function LinksFooter() {
         <Reveal>
           <Eyebrow>DELIVERABLES</Eyebrow>
         </Reveal>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {ITEMS.map((item, i) => {
             const pending = !item.href || item.href === "[TODO]";
             const Icon = item.icon;

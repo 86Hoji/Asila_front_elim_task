@@ -32,7 +32,7 @@ export const RESULTS = {
     { step: "Final rules, final labels", value: 0.881 },
   ],
   scoreANote:
-    "Labels grew during the work (classes and events added), so early steps are not directly comparable with the final score.",
+    "Steps 1-2 were scored on C3905 only, later steps on C3896 + C3905. Labels grew during the work (classes and events added), so early steps are not directly comparable with the final score.",
   heldOutScore: 0.901 as number | null,
   /** Shown prominently in "How we measured". */
   recallCaveat:

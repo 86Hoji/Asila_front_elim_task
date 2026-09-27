@@ -149,7 +149,7 @@ function HowWeMeasured() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="glass-raised p-5">
-          <p className="mono-label">Score A on dev videos ({devVideos.join(" + ")})</p>
+          <p className="mono-label">Score A by rule revision (dev videos)</p>
           <ol className="mt-4 space-y-3">
             {scoreA.map((s, i) => (
               <li key={s.step} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5">

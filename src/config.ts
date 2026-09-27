@@ -32,6 +32,7 @@ export const HERO_METRICS = [
 
 export const LINKS = {
   github: "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV",
+  site: "https://github.com/86Hoji/Asila_front_elim_task",
   weights: "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV/tree/main/weights",
   predictions:
     "https://github.com/ubaydullayevzafar1308-ops/WIUT-CV/blob/main/predictions_samples.json",
